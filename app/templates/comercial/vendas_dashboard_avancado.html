@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>BI — Painel Avançado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- jQuery + Select2 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    html,
+    body {
+      background: #0b0f14;
+      color: #eaf1f7;
+      margin: 0;
+      padding: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Navegação entre painéis */
+    .nav-bis {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .nav-bis .tab {
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      font-size: 12px;
+      font-weight: 600;
+      color: #9ca3af;
+    }
+
+    .nav-bis .tab:hover {
+      border-color: #22d3ee;
+      color: #e5f3ff;
+    }
+
+    .nav-bis .tab.active {
+      background: linear-gradient(90deg, #22d3ee, #38bdf8);
+      color: #020617;
+      border-color: transparent;
+      box-shadow: 0 0 0 2px rgba(34, 211, 238, .25);
+    }
+
+    /* botão voltar */
+    .btn-back {
+      display: inline-block;
+      margin: 18px 0 8px 20px;
+      padding: 8px 14px;
+      background: #111827;
+      color: #22d3ee;
+      border: 1px solid #22d3ee;
+      border-radius: 8px;
+      transition: all .2s;
+      font-weight: 600;
+    }
+
+    .btn-back:hover {
+      background: #22d3ee;
+      color: #0b0f14;
+    }
+
+    /* container principal */
+    #bi-dark {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 20px 60px;
+      background: #0b0f14;
+    }
+
+    /* layout */
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .col-md-6 {
+      flex: 1 1 48%;
+      min-width: 300px
+    }
+
+    .col-md-4 {
+      flex: 1 1 31%;
+      min-width: 260px
+    }
+
+    .col-md-3 {
+      flex: 1 1 31%;
+      min-width: 260px
+    }
+
+    .col-md-2 {
+      flex: 1 1 18%;
+      min-width: 180px
+    }
+
+    .col-md-1 {
+      flex: 0 0 auto
+    }
+
+    /* cards */
+    .card {
+      background: linear-gradient(180deg, #111827, #0f1621);
+      border: 1px solid #1f2a37;
+      border-radius: 16px;
+    }
+
+    .card-body {
+      padding: 16px 18px
+    }
+
+    h2 {
+      margin: 6px 0 14px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      color: #f7fbff;
+      text-align: left;
+    }
+
+    .card-title {
+      color: #e6edf3;
+      margin-top: 0
+    }
+
+    small,
+    label,
+    .badge {
+      font-weight: 600
+    }
+
+    .text-muted {
+      color: #c0c9d1 !important
+    }
+
+    .text-success {
+      color: #6ee7a8 !important
+    }
+
+    .text-danger {
+      color: #ff6b6b !important
+    }
+
+    /* forms */
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: #c0c9d1;
+      margin-bottom: 6px
+    }
+
+    .form-control,
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2a37;
+      background: #0d131b;
+      color: #eef3f7;
+      outline: none;
+      box-shadow: 0 1px 0 #000 inset;
+    }
+
+    .form-control::placeholder {
+      color: #9fb0bd
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(.85)
+    }
+
+    input[type="date"] {
+      color-scheme: dark
+    }
+
+    /* botões */
+    .btn {
+      display: inline-block;
+      width: auto;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid #0ea5b7;
+      background: #0b1f26;
+      color: #aaf2ff;
+      font-weight: 700;
+      box-shadow: 0 0 0 0 rgba(34, 211, 238, .25);
+      transition: .15s
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, .15)
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-weight: 700
+    }
+
+    .btn-outline {
+      border-color: #1f2937;
+      background: #020617;
+      color: #e5f3ff;
+    }
+
+    .btn-outline.active {
+      border-color: #22d3ee;
+      background: #022c3a;
+      color: #a5f3fc;
+      box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.25);
+    }
+
+    /* badges */
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px
+    }
+
+    .bg-success {
+      background: rgba(34, 197, 94, .18);
+      color: #86efac
+    }
+
+    .bg-warning {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d
+    }
+
+    .bg-secondary {
+      background: rgba(148, 163, 184, .18);
+      color: #cbd5e1
+    }
+
+    /* gráficos */
+    canvas {
+      background: transparent;
+      border-radius: 12px
+    }
+
+    #chartTend {
+      height: 140px !important
+    }
+
+    #chartUp,
+    #chartDown {
+      height: 180px !important
+    }
+
+    #chartUF,
+    #chartRep {
+      height: 350px !important;
+    }
+
+
+    /* RFM (linha extra para ações) */
+    .rfm-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .metric-toggle {
+      display: inline-flex;
+      gap: 6px;
+      background: #020617;
+      padding: 4px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+    }
+
+    .metric-toggle .btn-sm {
+      border-radius: 999px;
+      border: none;
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+
+    .metric-toggle .btn-sm.inactive {
+      background: transparent;
+      color: #9ca3af;
+    }
+
+    .metric-toggle .btn-sm.active {
+      background: #22d3ee;
+      color: #020617;
+    }
+
+    /* --- Select2 dark para combinar com o BI --- */
+    .select2-container .select2-selection--single {
+      background-color: #0d131b;
+      border: 1px solid #1f2a37;
+      border-radius: 10px;
+      height: 38px;
+      padding: 4px 6px;
+    }
+
+    .select2-container .select2-selection--single .select2-selection__rendered {
+      color: #eef3f7;
+      line-height: 28px;
+      font-size: 13px;
+    }
+
+    .select2-container .select2-selection--single .select2-selection__placeholder {
+      color: #9fb0bd;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: 36px;
+      right: 6px;
+    }
+
+    .select2-dropdown {
+      background-color: #020617;
+      border: 1px solid #1f2937;
+    }
+
+    .select2-results__option {
+      color: #e5e7eb;
+      font-size: 13px;
+    }
+
+    .select2-results__option--highlighted {
+      background-color: #0ea5b7 !important;
+      color: #020617 !important;
+    }
+
+    /* --------- MODAL RFM --------- */
+    #rfmModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    #rfmModal.show {
+      display: flex;
+    }
+
+    .rfm-panel {
+      width: 96%;
+      max-width: 1150px;
+      height: 90vh;
+      /* QUASE TELA CHEIA */
+      background: #020617;
+      border-radius: 16px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .rfm-header,
+    .rfm-footer {
+      padding: 10px 14px;
+      border-bottom: 1px solid #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .rfm-footer {
+      border-top: 1px solid #1f2937;
+      border-bottom: none;
+      justify-content: flex-end;
+    }
+
+    .rfm-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+
+    .rfm-body {
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
+    #rfmFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #020617;
+      display: block;
+    }
+
+    .btn-close-modal {
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 13px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+      background: #111827;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a href="{{ url_for('routes.home') }}" class="btn-back">← Voltar para Home</a>
+
+  <div id="bi-dark">
+
+    <div class="header-flex">
+      <h2>Análise estratégica de Vendas</h2>
+
+      <!-- Toggle Quantidade x Faturamento -->
+      <div class="metric-toggle">
+        {% set base_url = url_for('routes.vendas_dashboard_avancado') %}
+        {% set qs_qtd = 'dt_ini=' ~ dt_ini ~ '&dt_fim=' ~ dt_fim
+        ~ '&representante=' ~ (representante_sel or '')|urlencode
+        ~ '&estado=' ~ (estado_sel or '')|urlencode
+        ~ '&rede_loja=' ~ (rede_loja_sel or '')|urlencode
+        ~ '&modo=qtd' %}
+        {% set qs_valor = 'dt_ini=' ~ dt_ini ~ '&dt_fim=' ~ dt_fim
+        ~ '&representante=' ~ (representante_sel or '')|urlencode
+        ~ '&estado=' ~ (estado_sel or '')|urlencode
+        ~ '&rede_loja=' ~ (rede_loja_sel or '')|urlencode
+        ~ '&modo=valor' %}
+
+        <a href="{{ base_url }}?{{ qs_qtd }}" class="btn-sm {% if modo == 'qtd' %}active{% else %}inactive{% endif %}">
+          Quantidade
+        </a>
+        <a href="{{ base_url }}?{{ qs_valor }}"
+          class="btn-sm {% if modo == 'valor' %}active{% else %}inactive{% endif %}">
+          Faturamento
+        </a>
+      </div>
+    </div>
+
+    <hr>
+    <!-- Última importação -->
+    <div style="display:flex;justify-content:center;margin:4px 0 14px;">
+      <span class="badge" style="background:rgba(34,211,238,.18);color:#8be9fd;border-radius:999px;padding:6px 12px;">
+        Última importação:
+        <strong style="margin-left:6px">
+          {{ last_import_dt_vendas.strftime('%d/%m/%Y') if last_import_dt_vendas else '—' }}
+        </strong>
+      </span>
+    </div>
+    <br>
+    <hr>
+
+        <!-- Navegação entre painéis -->
+    <div class="nav-bis">
+      <a class="tab" href="{{ url_for('routes.vendas_dashboard_rede') }}">(BI) Rede de Loja</a>
+    </div>
+    <!-- Filtros -->
+    <form method="GET" class="row align-items-end mb-3">
+      <div class="col-md-3">
+        <label class="form-label">De</label>
+        <input type="date" name="dt_ini" class="form-control" value="{{ dt_ini }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Até</label>
+        <input type="date" name="dt_fim" class="form-control" value="{{ dt_fim }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Representante</label>
+        <select name="representante" class="form-select select2" id="representante">
+          <option value="">Todos</option>
+          {% for r in reps_all %}
+          <option value="{{ r }}" {{ 'selected' if r==representante_sel else '' }}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">UF</label>
+        <select name="estado" class="form-select select2" id="estado">
+          <option value="">Todas</option>
+          {% for u in ufs_all %}
+          <option value="{{ u }}" {{ 'selected' if u==estado_sel else '' }}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Rede de Loja</label>
+        <select name="rede_loja" class="form-select select2" id="rede_loja">
+          <option value="">Todas</option>
+          {% for r in redes_all %}
+          {% if r %}
+          <option value="{{ r }}" {{ 'selected' if r==rede_loja_sel else '' }}>{{ r }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1">
+        <input type="hidden" name="modo" value="{{ modo }}">
+        <button class="btn">Aplicar</button>
+        <a href="{{ url_for('routes.vendas_dashboard_avancado') }}" class="btn btn-outline">
+          Limpar
+        </a>
+
+      </div>
+    </form>
+
+    {% set qs_bi3 = 'dt_ini=' ~ dt_ini ~ '&dt_fim=' ~ dt_fim
+    ~ '&estado=' ~ (estado_sel or '')|urlencode
+    ~ '&rede_loja=' ~ (rede_loja_sel or '')|urlencode
+    ~ '&modo=' ~ modo %}
+    <div class="row" style="align-items:center;margin-bottom:4px;">
+      <div class="col-md-8">
+        <small class="text-muted">
+          Esta tela mostra a visão geral de vendas (tempo, UF, representante e rede de loja).
+          Para analisar apenas o desempenho das redes, use o botão ao lado.
+        </small>
+      </div>
+      <div class="col-md-4" style="text-align:right;">
+        <a href="{{ url_for('routes.vendas_dashboard_rede') }}?{{ qs_bi3 }}" class="btn btn-outline btn-sm">
+          Ver análise detalhada por Rede de Loja
+        </a>
+      </div>
+    </div>
+
+    <hr>
+    <br>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">
+              {% if modo == 'qtd' %}Quantidade no Período{% else %}Faturamento no Período{% endif %}
+            </small>
+            <h3 class="mb-0">
+              {% if modo == 'qtd' %}
+              {{ kpi_mes_atual|br_numero }}
+              {% else %}
+              {{ kpi_mes_atual|br_moeda }}
+              {% endif %}
+            </h3>
+            <small class="{{ 'text-success' if kpi_var_pct>=0 else 'text-danger' }}">{{ kpi_var_pct }}%</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Preço médio por par</small>
+            <h3 class="mb-0">{{ preco_medio_par|br_moeda }}</h3>
+            <small class="text-muted">Média = Valor / Quantidade (pares)</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">
+              {% if modo == 'qtd' %}
+              Média de pares por cliente
+              {% else %}
+              Ticket médio por cliente
+              {% endif %}
+            </small>
+            <h3 class="mb-0">
+              {% if modo == 'qtd' %}
+              {{ ticket_medio|br_numero }}
+              {% else %}
+              {{ ticket_medio|br_moeda }}
+              {% endif %}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- RFM com botões abrindo MODAL -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">RFM — Clientes</small>
+
+            <div>🟩 Até 30 dias: <b>{{ rfm_resumo.get('Ativo', 0) }}</b></div>
+            <div>🟧 Até 90 dias: <b>{{ rfm_resumo.get('Risco', 0) }}</b></div>
+            <div>🟥 90+ dias: <b>{{ rfm_resumo.get('Inativo', 0) }}</b></div>
+
+            <div class="rfm-actions">
+              <a href="#" class="btn btn-sm btn-rfm" data-rfm-url="{{ url_for('routes.rfm_list',
+                         status='Ativo',
+                         dt_ini=dt_ini, dt_fim=dt_fim,
+                         representante=representante_sel or '',
+                         estado=estado_sel or '',
+                         rede_loja=rede_loja_sel or '',
+                         modo=modo,
+                         embed=1) }}">
+                Ver até 30d
+              </a>
+
+              <a href="#" class="btn btn-sm btn-rfm" data-rfm-url="{{ url_for('routes.rfm_list',
+                         status='Risco',
+                         dt_ini=dt_ini, dt_fim=dt_fim,
+                         representante=representante_sel or '',
+                         estado=estado_sel or '',
+                         rede_loja=rede_loja_sel or '',
+                         modo=modo,
+                         embed=1) }}">
+                Ver até 90d
+              </a>
+
+              <a href="#" class="btn btn-sm btn-rfm" data-rfm-url="{{ url_for('routes.rfm_list',
+                         status='Inativo',
+                         dt_ini=dt_ini, dt_fim=dt_fim,
+                         representante=representante_sel or '',
+                         estado=estado_sel or '',
+                         rede_loja=rede_loja_sel or '',
+                         modo=modo,
+                         embed=1) }}">
+                Ver 90+d
+              </a>
+            </div>
+
+            <small class="text-muted">
+              Dica: selecione um <b>Representante</b>, <b>UF</b> e/ou <b>Rede de Loja</b> nos filtros acima e clique
+              Aplicar
+              para que os botões levem à lista já filtrada.
+            </small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <br>
+
+    <div id="saudeBase" class="row g-3 mb-3">
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Base de clientes</small>
+            <h3 id="sb_base" class="mb-0">—</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Clientes novos</small>
+            <h3 id="sb_novos" class="mb-0">—</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Recompra</small>
+            <h3 id="sb_recompra" class="mb-0">—</h3><small class="text-muted">dos clientes</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Perca de clientes (Churn)</small>
+            <h3 id="sb_churn" class="mb-0">—</h3><small class="text-muted">Última compra ≥ 60d</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Intervalo médio (Gap)</small>
+            <h3 id="sb_gap" class="mb-0">—</h3><small class="text-muted">dias</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card">
+          <div class="card-body">
+            <small class="text-muted">Ativos (≤60d)</small>
+            <h3 id="sb_ativos" class="mb-0">—</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br>
+
+    <!-- Tendência -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">
+          Tendência Mensal ({{ metric_label }})
+        </h5>
+        <canvas id="chartTend"></canvas>
+      </div>
+    </div>
+    <br>
+    <!-- Crescimento / Queda -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">
+              Quem mais <span class="text-success">cresceu</span> (últimos 30d)
+              <small class="text-muted">({{ metric_label }})</small>
+            </h5>
+            <canvas id="chartUp"></canvas>
+          </div>
+        </div>
+      </div>
+      <br>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">
+              Quem mais <span class="text-danger">caiu</span> (últimos 30d)
+              <small class="text-muted">({{ metric_label }})</small>
+            </h5>
+            <canvas id="chartDown"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+    <!-- Rankings -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Top UFs (por {{ 'quantidade' if modo == 'qtd' else 'faturamento' }})</h5>
+            <canvas id="chartUF"></canvas>
+          </div>
+        </div>
+      </div>
+      <br>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Top Representantes (por {{ 'quantidade' if modo == 'qtd' else 'faturamento' }})</h5>
+            <canvas id="chartRep"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+  </div>
+
+  <!-- MODAL RFM -->
+  <div id="rfmModal">
+    <div class="rfm-panel">
+      <div class="rfm-header">
+        <div class="rfm-title">Clientes — RFM</div>
+        <button type="button" class="btn-close-modal" id="btnCloseRfm">Fechar ✕</button>
+      </div>
+      <div class="rfm-body">
+        <iframe id="rfmFrame" src=""></iframe>
+      </div>
+      <div class="rfm-footer">
+        <button type="button" class="btn-close-modal" id="btnCloseRfmFooter">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+
+  <!-- Contexto JSON -->
+  <script type="application/json" id="ctx">
+{{ {
+  "tend_labels": tend_labels, "tend_valores": tend_valores,
+  "up_labels": up_labels, "up_values": up_values,
+  "down_labels": down_labels, "down_values": down_values,
+  "rank_uf_labels": rank_uf_labels, "rank_uf_values": rank_uf_values,
+  "rank_rep_labels": rank_rep_labels, "rank_rep_values": rank_rep_values,
+  "metric_label": metric_label,
+  "modo": modo
+} | tojson | safe }}
+</script>
+
+  <script>
+    const C = JSON.parse(document.getElementById('ctx').textContent);
+    const darkTicks = { color: '#eef3f7' };
+    const darkGrid = { color: 'rgba(148,163,184,0.28)' };
+    const legendCfg = { labels: { color: '#f7fbff', boxWidth: 14 } };
+    const tooltipCfg = {
+      backgroundColor: '#0b0f14', titleColor: '#e7edf3',
+      bodyColor: '#e7edf3', borderColor: '#1f2a37', borderWidth: 1
+    };
+    const panelFill = {
+      id: 'panelFill', beforeDraw(chart) {
+        const { ctx, chartArea } = chart; ctx.save(); ctx.fillStyle = '#0f1621';
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top); ctx.restore();
+      }
+    };
+
+    const METRIC_LABEL = C.metric_label || 'Métrica';
+
+    // tendência
+    new Chart(document.getElementById('chartTend'), {
+      type: 'line', plugins: [panelFill],
+      data: {
+        labels: C.tend_labels, datasets: [{
+          label: METRIC_LABEL, data: C.tend_valores,
+          borderColor: '#22d3ee', pointBackgroundColor: '#22d3ee', tension: 0.35
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: legendCfg, tooltip: tooltipCfg },
+        scales: { x: { ticks: darkTicks, grid: darkGrid }, y: { ticks: darkTicks, grid: darkGrid } }
+      }
+    });
+
+    // crescimento / queda
+    function barChart(el, labels, values, color) {
+      return new Chart(document.getElementById(el), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: '%', data: values, backgroundColor: color }] },
+        options: {
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { labels: { color: '#f7fbff', boxWidth: 14 } },
+            tooltip: {
+              backgroundColor: '#0b0f14', titleColor: '#e7edf3', bodyColor: '#e7edf3',
+              borderColor: '#1f2a37', borderWidth: 1,
+              callbacks: { label: (ctx) => `${ctx.formattedValue}%` }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#eef3f7', callback: v => v + '%' },
+              grid: { color: 'rgba(148,163,184,0.28)' }
+            },
+            y: { ticks: { color: '#eef3f7' }, grid: { color: 'rgba(148,163,184,0.28)' } }
+          }
+        }
+      });
+    }
+
+    // Só positivos no "cresceu"
+    const pos = (C.up_values || []).map((v, i) => ({ v: +v || 0, i })).filter(x => x.v > 0);
+    if (pos.length) {
+      barChart(
+        'chartUp',
+        pos.map(x => C.up_labels[x.i]),
+        pos.map(x => +x.v.toFixed(2)),
+        'rgba(34,197,94,0.65)'
+      );
+    } else {
+      const ctxUp = document.getElementById('chartUp').getContext('2d');
+      ctxUp.font = '14px Inter'; ctxUp.fillStyle = '#9fb0bd';
+      ctxUp.fillText('Nenhum representante apresentou crescimento no período.', 20, 40);
+    }
+
+    // Só negativos no "caiu"
+    const neg = (C.down_values || []).map((v, i) => ({ v: +v || 0, i })).filter(x => x.v < 0);
+    if (neg.length) {
+      barChart(
+        'chartDown',
+        neg.map(x => C.down_labels[x.i]),
+        neg.map(x => +x.v.toFixed(2)),
+        'rgba(239,68,68,0.65)'
+      );
+    } else {
+      const ctxDn = document.getElementById('chartDown').getContext('2d');
+      ctxDn.font = '14px Inter'; ctxDn.fillStyle = '#9fb0bd';
+      ctxDn.fillText('Nenhum representante apresentou queda no período.', 20, 40);
+    }
+
+    // rankings
+    // rankings
+    function monoBar(el, labels, values) {
+      return new Chart(document.getElementById(el), {
+        type: 'bar',
+        plugins: [panelFill],
+        data: {
+          labels,
+          datasets: [{
+            label: METRIC_LABEL,
+            data: values,
+            backgroundColor: 'rgba(34,211,238,0.35)',
+            borderColor: '#22d3ee',
+            borderRadius: 6,
+            categoryPercentage: 0.7, // tamanho do "slot" de cada categoria
+            barPercentage: 0.8        // quanto desse slot a barra ocupa
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: { legend: legendCfg, tooltip: tooltipCfg },
+          scales: {
+            x: { ticks: darkTicks, grid: darkGrid },
+            y: { ticks: darkTicks, grid: darkGrid }
+          }
+        }
+      });
+    }
+
+    monoBar('chartUF', C.rank_uf_labels, C.rank_uf_values);
+    monoBar('chartRep', C.rank_rep_labels, C.rank_rep_values);
+
+  </script>
+
+  <script>
+    function brl(v) { return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+    function intf(v) { return Number(v || 0).toLocaleString('pt-BR') }
+
+    function getFiltrosBI() {
+      const qs = new URLSearchParams();
+
+      const di = document.querySelector('[name="dt_ini"]');
+      const df = document.querySelector('[name="dt_fim"]');
+      const rep = document.querySelector('[name="representante"]');
+      const uf = document.querySelector('[name="estado"]');
+      const rede = document.querySelector('[name="rede_loja"]');
+      const modo = document.querySelector('[name="modo"]');
+
+      if (di && di.value) qs.set('dt_ini', di.value);
+      if (df && df.value) qs.set('dt_fim', df.value);
+      if (rep && rep.value) qs.set('representante', rep.value);
+      if (uf && uf.value) qs.set('estado', uf.value);
+      if (rede && rede.value) qs.set('rede_loja', rede.value);
+      if (modo && modo.value) qs.set('modo', modo.value);
+
+      return qs.toString();
+    }
+
+    const SAUDE_URL = "{{ url_for('routes.indicadores_base') }}";
+
+    async function loadSaudeBase() {
+      try {
+        const q = getFiltrosBI();
+        const url = q ? `${SAUDE_URL}?${q}` : SAUDE_URL;
+
+        const resp = await fetch(url, { credentials: 'same-origin' });
+        if (!resp.ok) {
+          console.error('indicadores_base HTTP', resp.status, await resp.text());
+          return;
+        }
+        const d = await resp.json();
+
+        const set = (id, txt) => { const el = document.getElementById(id); if (el) { el.textContent = txt; } };
+
+        set('sb_base', intf(d.base_total || 0));
+        set('sb_novos', intf(d.clientes_novos || 0));
+        set('sb_recompra', (d.taxa_recompra_pct ?? 0) + '%');
+        set('sb_churn', (d.churn_pct ?? 0) + '%');
+        set('sb_gap', (d.gap_medio_dias != null ? intf(d.gap_medio_dias) : '—'));
+        set('sb_ativos', intf(d.ativos_60d || 0));
+      } catch (err) {
+        console.error('Erro loadSaudeBase()', err);
+      }
+    }
+
+    // ------ Modal RFM ------
+    function openRfmModal(url) {
+      const modal = document.getElementById('rfmModal');
+      const frame = document.getElementById('rfmFrame');
+      if (frame) {
+        frame.src = url;
+      }
+      if (modal) {
+        modal.classList.add('show');
+      }
+    }
+
+    function closeRfmModal() {
+      const modal = document.getElementById('rfmModal');
+      const frame = document.getElementById('rfmFrame');
+      if (frame) {
+        frame.src = '';
+      }
+      if (modal) {
+        modal.classList.remove('show');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializa Select2 nos filtros
+      if (window.jQuery) {
+        $('.select2').select2({
+          width: '100%',
+          allowClear: true,
+          placeholder: 'Selecione...'
+        });
+      }
+
+      // Botões RFM -> modal
+      document.querySelectorAll('.btn-rfm').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const url = btn.getAttribute('data-rfm-url');
+          if (url) {
+            openRfmModal(url);
+          }
+        });
+      });
+
+      // Fechar modal (botões)
+      const btnClose = document.getElementById('btnCloseRfm');
+      const btnClose2 = document.getElementById('btnCloseRfmFooter');
+      if (btnClose) btnClose.addEventListener('click', closeRfmModal);
+      if (btnClose2) btnClose2.addEventListener('click', closeRfmModal);
+
+      // Clique fora do painel fecha também
+      const modal = document.getElementById('rfmModal');
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closeRfmModal();
+          }
+        });
+      }
+
+      loadSaudeBase();
+    });
+  </script>
+
+</body>
+
+</html>

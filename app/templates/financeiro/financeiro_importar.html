@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Importar Títulos (Financeiro)</h2>
+  </div>
+
+  <div class="alert alert-info">
+    Baixe o <a class="fw-bold" href="{{ url_for('routes.financeiro_importar_modelo') }}">modelo CSV</a> com as colunas esperadas.
+    <div class="small mt-2">
+      <b>Colunas:</b> <code>empresa, cliente, representante, especie, numero_doc, emissao, vencimento, liquidacao, valor, SALDO, conta_bancaria, banco</code><br>
+      Datas em <code>dd/mm/aaaa</code>. Valores em BRL (ex.: <code>1.234,56</code>).<br>
+      <b>SALDO</b> já vem da planilha (o que falta receber).
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" action="{{ url_for('routes.financeiro_importar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 align-items-end">
+          <div class="col-md-8">
+            <label class="form-label">Arquivo (.csv ou .xlsx)</label>
+            <input class="form-control" type="file" name="arquivo" accept=".csv,.xlsx" required>
+          </div>
+          <div class="col-md-4 d-flex gap-2">
+            <button class="btn btn-primary flex-fill">
+              <i class="fa-solid fa-file-import"></i> Importar
+            </button>
+            <a class="btn btn-outline-secondary flex-fill" href="{{ url_for('routes.financeiro_importar_modelo') }}">
+              <i class="fa-solid fa-download"></i> Baixar Modelo
+            </a>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock content %}

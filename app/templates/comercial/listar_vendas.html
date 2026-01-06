@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between mb-2">
+    <h3>Vendas</h3>
+    <hr>
+    <a class="btn btn-primary" href="{{ url_for('routes.nova_venda') }}">+ Nova Venda</a>
+    <a class="btn btn-outline-success" href="{{ url_for('routes.importar_vendas') }}">Importar vendas</a>
+    <a class="btn btn-warning" href="{{ url_for('routes.importar_referencias_venda') }}">Importar referencias</a>
+    <!-- Botão ZERAR COMERCIAL -->
+    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#mdZerarCom">
+      Zerar dados
+    </button>
+  </div>
+
+  <!-- Filtros via querystring -->
+  <form class="card card-body mb-3" method="get">
+    <div class="row g-2">
+      <div class="col-md-2">
+        <label class="form-label">De</label>
+        <input type="date" class="form-control" name="data_ini" value="{{ request.args.get('data_ini','') }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Até</label>
+        <input type="date" class="form-control" name="data_fim" value="{{ request.args.get('data_fim','') }}">
+      </div>
+      <div class="col-md-1">
+        <label class="form-label">UF</label>
+        <input type="text" class="form-control" name="estado" maxlength="2" value="{{ request.args.get('estado','') }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Região</label>
+        <select class="form-select" name="regiao">
+          {% set rsel = request.args.get('regiao','') %}
+          <option value="" {{ 'selected' if rsel=='' else '' }}></option>
+          {% for r in ['NORTE','NORDESTE','CENTRO-OESTE','SUDESTE','SUL'] %}
+          <option value="{{r}}" {{ 'selected' if rsel==r else '' }}>{{r}}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Representante</label>
+        <input type="text" class="form-control" name="representante" value="{{ request.args.get('representante','') }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Cliente</label>
+        <input type="text" class="form-control" name="cliente" value="{{ request.args.get('cliente','') }}">
+      </div>
+      <div class="col-md-1">
+        <label class="form-label">Pedido</label>
+        <input type="text" class="form-control" name="pedido" value="{{ request.args.get('pedido','') }}">
+      </div>
+    </div>
+    <hr>
+    <div class="mt-2">
+      <button class="btn btn-primary">Filtrar</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('routes.listar_vendas') }}">Atualizar</a>
+    </div>
+
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>UF</th>
+          <th>Município</th>
+          <th>Representante</th>
+          <th>Cliente</th>
+          <th>Pedido</th>
+          <th class="text-end">Qtd</th>
+          <th class="text-end">Valor (R$)</th>
+          <th>Região</th>
+          <th style="width:110px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in pag.items %}
+        <tr>
+          <td>{{ v.data_inclusao.strftime('%d/%m/%Y') }}</td>
+          <td> {{ v.estado }} </td>
+          <td>{{ v.municipio or '' }}</td>
+          <td>{{ v.representante }}</td>
+          <td>{{ v.cliente }}</td>
+          <td>{{ v.pedido }}</td>
+          <td class="text-end">{{ "{:,}".format(v.quantidade).replace(",",".") }}</td>
+          <td class="text-end">{{ "{:,.2f}".format(v.valor).replace(",", "X").replace(".", ",").replace("X", ".") }}
+          </td>
+          <td>{{ v.regiao or '' }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-warning" href="{{ url_for('routes.editar_venda', venda_id=v.id) }}">Editar</a>
+            <form action="{{ url_for('routes.excluir_venda', venda_id=v.id) }}" method="post" class="d-inline"
+              onsubmit="return confirm('Excluir a venda #{{v.id}}?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-danger">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center text-muted">Nenhum registro.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- paginação -->
+  <nav>
+    <ul class="pagination">
+      <li class="page-item {% if not prev_url %}disabled{% endif %}">
+        <a class="page-link" href="{{ prev_url or '#' }}">«</a>
+      </li>
+
+      {% for p in pages %}
+      {% if p is none %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% else %}
+      <li class="page-item {% if p.active %}active{% endif %}">
+        <a class="page-link" href="{{ p.url }}">{{ p.num }}</a>
+      </li>
+      {% endif %}
+      {% endfor %}
+
+      <li class="page-item {% if not next_url %}disabled{% endif %}">
+        <a class="page-link" href="{{ next_url or '#' }}">»</a>
+      </li>
+    </ul>
+  </nav>
+
+<!-- Modal ZERAR COMERCIAL -->
+<div class="modal fade" id="mdZerarCom" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="POST" action="{{ url_for('routes.bi_comercial_zerar') }}">
+      <div class="modal-header">
+        <h5 class="modal-title">Zerar BI Comercial</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="mb-2">
+          Esta ação apagará as tabelas de <b>vendas</b> e <b>referências de venda</b> do BI Comercial e reiniciará os IDs.
+        </p>
+        <p class="mb-2">Para confirmar, digite <code>ZERAR</code> abaixo:</p>
+        <input type="text" class="form-control" name="confirm" id="inpConfirmCom" placeholder="ZERAR" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-danger" id="btnComGo" disabled>Apagar tudo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const i = document.getElementById('inpConfirmCom');
+  const b = document.getElementById('btnComGo');
+  if (i && b) i.addEventListener('input', () => b.disabled = (i.value.trim().toUpperCase() !== 'ZERAR'));
+});
+</script>
+
+</div>
+{% endblock %}

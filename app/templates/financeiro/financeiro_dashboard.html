@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>BI — Financeiro</title>
+  <br>
+  <a href="{{ url_for('routes.home') }}" class="btn-back">← Voltar para Home</a>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap 5 (necessário para modais) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Base */
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, Arial, sans-serif
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f14;
+      color: #fff
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none
+    }
+
+    /* Grid & cards */
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 20px 60px
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px
+    }
+
+    .col-12 {
+      flex: 1 1 100%
+    }
+
+    .col-6 {
+      flex: 1 1 48%;
+      min-width: 300px
+    }
+
+    .col-4 {
+      flex: 1 1 31%;
+      min-width: 280px
+    }
+
+    .col-3 {
+      flex: 1 1 23%;
+      min-width: 220px
+    }
+
+    .card {
+      background: linear-gradient(180deg, #111827, #0f1621);
+      border: 1px solid #1f2a37;
+      border-radius: 16px
+    }
+
+    .card-body {
+      padding: 16px 18px
+    }
+
+    /* Tipografia 100% branca */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    small,
+    label,
+    .card-title,
+    th,
+    td,
+    .text-muted {
+      color: #fff !important
+    }
+
+    h1 {
+      margin: 6px 0 14px;
+      font-weight: 800;
+      text-align: center
+    }
+
+    /* KPIs */
+    .kpi {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    .kpi h3 {
+      margin: 4px 0;
+      font-size: 26px
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .bg-success {
+      background: rgba(34, 197, 94, .18) !important;
+      color: #86efac !important
+    }
+
+    .bg-warning {
+      background: rgba(245, 158, 11, .18) !important;
+      color: #fcd34d !important
+    }
+
+    .bg-secondary {
+      background: rgba(148, 163, 184, .18) !important;
+      color: #cbd5e1 !important
+    }
+
+    /* Filtros */
+    .filters {
+      margin: 10px 0 12px
+    }
+
+    .filters .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .filters .row {
+      align-items: flex-end
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2a37;
+      background: #0d131b;
+      color: #fff;
+      outline: none;
+      box-shadow: 0 1px 0 #000 inset
+    }
+
+    input[type="date"] {
+      color-scheme: dark
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(.95)
+    }
+
+    /* Botões */
+    .btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid #0ea5b7;
+      background: #0b1f26;
+      color: #aaf2ff;
+      font-weight: 700;
+      transition: .15s
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, .15)
+    }
+
+    .btn-back {
+      display: inline-block;
+      margin: 18px 0 8px 20px;
+      padding: 8px 14px;
+      background: #111827;
+      color: #22d3ee;
+      border: 1px solid #22d3ee;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: .2s
+    }
+
+    /* Botão “Visualizar” nos cards */
+    .btn.btn-outline-light.btn-sm {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border-color: #22d3ee;
+      color: #22d3ee
+    }
+
+    .btn.btn-outline-light.btn-sm:hover {
+      background: #22d3ee;
+      color: #0b0f14
+    }
+
+    /* Gráficos */
+    .chart-box {
+      position: relative;
+      height: 220px;
+      width: 100%;
+      overflow: hidden
+    }
+
+    .chart-box canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      background: transparent;
+      border-radius: 12px
+    }
+
+    /* Tabelas */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px
+    }
+
+    th,
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #1f2a37;
+      font-size: 14px
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid #1f2a37
+    }
+
+    /* Classes de atraso */
+    .c-otimo {
+      background: rgba(31, 230, 103, .18);
+      color: #86efac
+    }
+
+    .c-bom {
+      background: rgba(59, 130, 246, .18);
+      color: #93c5fd
+    }
+
+    .c-regular {
+      background: rgba(245, 158, 11, .18);
+      color: #fcd34d
+    }
+
+    .c-alerta {
+      background: rgba(244, 63, 94, .18);
+      color: #fda4af
+    }
+
+    .c-ruim {
+      background: rgba(239, 68, 68, .18);
+      color: #fecaca
+    }
+
+    /* ===== Modais (Bootstrap) ===== */
+    .modal-backdrop.show {
+      opacity: .65
+    }
+
+    .modal-content {
+      background: #0f1621;
+      color: #fff;
+      border: 1px solid #1f2a37;
+      border-radius: 16px
+    }
+
+    .modal-header,
+    .modal-footer {
+      border: 0
+    }
+
+    .btn-close,
+    .btn-close-white {
+      filter: invert(1);
+      opacity: 1
+    }
+
+    .modal .table {
+      color: #fff;
+      background: transparent
+    }
+
+    .modal .table thead th {
+      color: #fff;
+      border-bottom: 1px solid #1f2a37
+    }
+
+    .modal .table td {
+      border-color: #1f2a37
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div class="wrap">
+    <h1>BI Financeiro</h1>
+<!-- Última importação -->
+<div style="display:flex;justify-content:center;margin:4px 0 14px;">
+  <span class="badge" style="background:rgba(34,211,238,.18);color:#8be9fd;border-radius:999px;padding:6px 12px;">
+    Última importação (Data_Emissao):
+    <strong style="margin-left:6px">
+      {{ last_import_date_emissao.strftime('%d/%m/%Y') if last_import_date_emissao else '—' }}
+    </strong>
+  </span>
+</div>
+    <!-- Filtros -->
+    <form method="GET" class="card filters">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-4 field">
+            <label>De</label>
+            <input type="date" class="form-control" name="dt_ini" value="{{ dt_ini }}">
+          </div>
+          <div class="col-4 field">
+            <label>Até</label>
+            <input type="date" class="form-control" name="dt_fim" value="{{ dt_fim }}">
+          </div>
+          <div class="col-4">
+            <button class="btn" type="submit">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- KPIs -->
+    <div class="row">
+      <div class="col-4">
+        <div class="card">
+          <div class="card-body kpi">
+            <div>
+              <small class="text-muted">Em Aberto</small>
+              <h3>{{ total_aberto|br_moeda }}</h3>
+            </div>
+            <span class="badge bg-warning">a receber</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card">
+          <div class="card-body kpi">
+            <div>
+              <small class="text-muted">Recebido no Período</small>
+              <h3>{{ total_recebido|br_moeda }}</h3>
+            </div>
+            <span class="badge bg-success">entrada</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card">
+          <div class="card-body kpi">
+            <div>
+              <small class="text-muted">Vencido (Em Aberto)</small>
+              <h3>{{ total_vencido|br_moeda }}</h3>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge bg-secondary align-self-center">risco</span>
+              <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal"
+                data-bs-target="#modalVencidos">Visualizar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card">
+          <div class="card-body kpi">
+            <div>
+              <small class="text-muted">A vencer (7 dias)</small>
+              <h3>{{ total_a_vencer_7|br_moeda }}</h3>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge bg-secondary align-self-center">curto prazo</span>
+              <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal"
+                data-bs-target="#modalAvencer">Visualizar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="card">
+          <div class="card-body kpi">
+            <div>
+              <small class="text-muted">Atraso médio (dias)</small>
+              <h3>{{ atraso_medio }}</h3>
+            </div>
+            <span class="badge bg-secondary">pagos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+<br>
+    <!-- Gráficos -->
+    <div class="row">
+      <div class="col-6">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">Aging (abertos por faixa)</h3>
+            <div class="chart-box"><canvas id="chartAging"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">Top Devedores (aberto)</h3>
+            <div class="chart-box"><canvas id="chartTopDev"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">Classe por Atraso (clientes)</h3>
+            <div class="chart-box" style="height:200px"><canvas id="chartClasse"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">Tendência de Recebimentos</h3>
+            <div class="chart-box" style="height:200px"><canvas id="chartTend"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de clientes por classe/atraso -->
+    <div class="card" style="margin-top:14px;">
+      <div class="card-body">
+        <h3 class="card-title">Clientes — atraso médio e classe</h3>
+        <small class="text-muted">Apenas títulos liquidados no período filtrado entram nesse cálculo.</small>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th style="width:140px">Atraso médio (dias)</th>
+              <th style="width:120px">Classe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in clientes_classe %}
+            <tr>
+              <td>{{ row.cliente }}</td>
+              <td>{{ row.atraso_medio }}</td>
+              <td>
+                {% set c = row.classe %}
+                <span class="pill
+                  {% if c=='Ótimo' %} c-otimo
+                  {% elif c=='Bom' %} c-bom
+                  {% elif c=='Regular' %} c-regular
+                  {% elif c=='Alerta' %} c-alerta
+                  {% else %} c-ruim {% endif %}
+                ">{{ c }}</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" class="text-muted">Sem registros no período.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+
+  <!-- Contexto JSON para os gráficos -->
+  <script type="application/json" id="ctx">
+  {{ {
+    "aging_labels": aging_labels, "aging_values": aging_values,
+    "top_dev_labels": top_dev_labels, "top_dev_values": top_dev_values,
+    "classe_counts": classe_counts,
+    "tend_labels": tend_labels, "tend_valores": tend_valores
+  } | tojson | safe }}
+  </script>
+
+  <script>
+    const C = JSON.parse(document.getElementById('ctx').textContent);
+
+    const darkTicks = { color: '#eef3f7' };
+    const darkGrid = { color: 'rgba(148,163,184,0.28)' };
+    const legendCfg = { labels: { color: '#f7fbff', boxWidth: 14 } };
+    const tooltipCfg = {
+      backgroundColor: '#0b0f14', titleColor: '#e7edf3',
+      bodyColor: '#e7edf3', borderColor: '#1f2a37', borderWidth: 1
+    };
+    const panelFill = {
+      id: 'panelFill', beforeDraw(ch) {
+        const { ctx, chartArea } = ch; if (!chartArea) return;
+        ctx.save(); ctx.fillStyle = '#0f1621';
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        ctx.restore();
+      }
+    };
+    const commonOpt = {
+      maintainAspectRatio: false,
+      plugins: { legend: legendCfg, tooltip: tooltipCfg },
+      scales: { x: { ticks: darkTicks, grid: darkGrid }, y: { ticks: darkTicks, grid: darkGrid } }
+    };
+
+    // Aging
+    new Chart(document.getElementById('chartAging'), {
+      type: 'bar', plugins: [panelFill],
+      data: {
+        labels: C.aging_labels, datasets: [{
+          label: 'Em aberto (R$)', data: C.aging_values,
+          backgroundColor: 'rgba(34,211,238,0.35)', borderColor: '#22d3ee'
+        }]
+      },
+      options: {
+        ...commonOpt, indexAxis: 'y',
+        scales: {
+          x: { ticks: { ...darkTicks, callback: v => 'R$ ' + Number(v).toLocaleString('pt-BR') }, grid: darkGrid },
+          y: { ticks: darkTicks, grid: darkGrid }
+        }
+      }
+    });
+
+    // Top Devedores
+    new Chart(document.getElementById('chartTopDev'), {
+      type: 'bar', plugins: [panelFill],
+      data: {
+        labels: C.top_dev_labels, datasets: [{
+          label: 'Em aberto (R$)', data: C.top_dev_values,
+          backgroundColor: 'rgba(239,68,68,0.35)', borderColor: '#ef4444'
+        }]
+      },
+      options: {
+        ...commonOpt, indexAxis: 'y',
+        scales: {
+          x: { ticks: { ...darkTicks, callback: v => 'R$ ' + Number(v).toLocaleString('pt-BR') }, grid: darkGrid },
+          y: { ticks: darkTicks, grid: darkGrid }
+        }
+      }
+    });
+
+    // Classe por atraso — donut
+    (function () {
+      const counts = C.classe_counts || {};
+      const labels = ['Ótimo', 'Bom', 'Regular', 'Alerta', 'Ruim'];
+      const values = labels.map(k => counts[k] || 0);
+      new Chart(document.getElementById('chartClasse'), {
+        type: 'doughnut', plugins: [panelFill],
+        data: {
+          labels,
+          datasets: [{
+            data: values, backgroundColor: [
+              'rgba(34,197,94,0.65)', 'rgba(59,130,246,0.65)', 'rgba(245,158,11,0.65)',
+              'rgba(244,63,94,0.65)', 'rgba(239,68,68,0.65)'
+            ]
+          }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: legendCfg, tooltip: tooltipCfg } }
+      });
+    })();
+
+    // Tendência
+    new Chart(document.getElementById('chartTend'), {
+      type: 'line', plugins: [panelFill],
+      data: {
+        labels: C.tend_labels, datasets: [{
+          label: 'Recebido', data: C.tend_valores,
+          borderColor: '#22d3ee', pointBackgroundColor: '#22d3ee', tension: 0.35
+        }]
+      },
+      options: {
+        ...commonOpt,
+        scales: {
+          x: { ticks: darkTicks, grid: darkGrid },
+          y: { ticks: { ...darkTicks, callback: v => 'R$ ' + Number(v).toLocaleString('pt-BR') }, grid: darkGrid }
+        }
+      }
+    });
+  </script>
+
+  <!-- Modais -->
+  <div class="modal fade" id="modalVencidos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content" style="background:#0f1621; color:#eaf1f7;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Vencidos (em aberto)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Nº Doc</th>
+                  <th>Vencimento</th>
+                  <th>Dias vencido</th>
+                  <th class="text-end">Saldo (R$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c, doc, venc, valor, dias in vencidos_list %}
+                <tr>
+                  <td>{{ c }}</td>
+                  <td>{{ doc }}</td>
+                  <td>{{ venc|br_data }}</td>
+                  <td><span class="badge bg-danger">{{ dias }}</span></td>
+                  <td class="text-end">{{ valor|br_moeda }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted">Sem títulos vencidos em aberto.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-light" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalAvencer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content" style="background:#0f1621; color:#eaf1f7;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">A vencer (próximos 7 dias)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Nº Doc</th>
+                  <th>Vencimento</th>
+                  <th>Faltam (dias)</th>
+                  <th class="text-end">Saldo (R$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c, doc, venc, valor, dias in a_vencer_list %}
+                <tr>
+                  <td>{{ c }}</td>
+                  <td>{{ doc }}</td>
+                  <td>{{ venc|br_data }}</td>
+                  <td><span class="badge bg-warning">{{ dias }}</span></td>
+                  <td class="text-end">{{ valor|br_moeda }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted">Sem títulos a vencer em 7 dias.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-light" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS (bundle com Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

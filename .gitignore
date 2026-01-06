@@ -1,0 +1,31 @@
+# ===== Ambiente virtual =====
+venv/
+.venv/
+
+# ===== Variáveis de ambiente =====
+.env
+.flaskenv
+
+# ===== Cache Python =====
+__pycache__/
+*.pyc
+
+# ===== Banco de dados local =====
+instance/
+*.sqlite
+*.db
+
+# ===== Uploads (gerados em runtime) =====
+app/static/uploads/
+
+# ===== IDEs / Editores =====
+.vscode/
+.idea/
+
+# ===== Arquivos de SO =====
+.DS_Store
+Thumbs.db
+
+# ===== Arquivos Windows (não usar em produção Linux) =====
+*.bat
+*.exe
