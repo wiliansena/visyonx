@@ -75,11 +75,6 @@
     <!-- Menu lateral (visível apenas para usuários autenticados) -->
     {% if current_user.is_authenticated %}
     <nav class="sidebar">
-        <div class="text-center">
-            <h4> {{ (current_user.empresa.nome if current_user.empresa and current_user.empresa.nome else "MASTER") |
-                upper }}
-            </h4>
-        </div>
 
         <a href="{{ url_for('routes.home') }}"><i class="fas fa-home"></i> Página Inicial</a>
         <hr>

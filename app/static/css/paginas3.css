@@ -6,8 +6,10 @@
     --bg-top: linear-gradient(90deg, #0b3c49, #021d24);
     --bg-sidebar: linear-gradient(180deg, #0c2b36, #071820);
 
-    --accent: #00ffb4;
-    --accent-hover: #00c3ff;
+    --accent: #0b3ea8;
+    --accent-hover: #1fa2ff;
+    --accent-orange: #ff8c1a;
+
 
     --text-main: #e9f1f5;
     --text-muted: rgba(255,255,255,.65);
@@ -53,9 +55,9 @@ body {
 }
 
 .empresa-nome {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-orange);
 }
 
 .usuario-nome {
@@ -417,4 +419,24 @@ input[type="search"] {
   align-items: center;
   justify-content: flex-start; /* ou flex-start se preferir */
   height: 100%;
+}
+
+/* ===============================
+   CARD DE FILTROS
+   =============================== */
+.filtros-card {
+    background-color: #ffffff;
+    color: #212529;
+}
+
+/* Inputs dentro do filtro */
+.filtros-card .form-control,
+.filtros-card .form-select {
+    background-color: #ffffff;
+    color: #212529;
+}
+
+/* Labels */
+.filtros-card label {
+    color: #495057;
 }
