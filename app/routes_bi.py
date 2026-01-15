@@ -1410,18 +1410,37 @@ def importar_colaboradores():
             colaborador = Colaborador.query.filter_by(codigo=codigo).first()
 
             if colaborador:
-                # Detecta duplicidade por normalização
-                if colaborador.nome != str(nome).strip():
-                    colaborador.nome = str(nome).strip()
-                    colaborador.nome_fantasia = (
-                        str(nome_fantasia).strip()
-                        if valor_valido(nome_fantasia)
-                        else None
-                    )
-                    colaborador.contato = str(contato).strip()
+                alterou = False
+
+                nome_novo = str(nome).strip()
+                fantasia_nova = (
+                    str(nome_fantasia).strip()
+                    if valor_valido(nome_fantasia)
+                    else None
+                )
+                contato_novo = (
+                    str(contato).strip()
+                    if valor_valido(contato)
+                    else None
+                )
+
+                if colaborador.nome != nome_novo:
+                    colaborador.nome = nome_novo
+                    alterou = True
+
+                if colaborador.nome_fantasia != fantasia_nova:
+                    colaborador.nome_fantasia = fantasia_nova
+                    alterou = True
+
+                if colaborador.contato != contato_novo:
+                    colaborador.contato = contato_novo
+                    alterou = True
+
+                if alterou:
                     atualizados += 1
                 else:
                     duplicados += 1
+
             else:
                 db.session.add(
                     Colaborador(
