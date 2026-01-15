@@ -86,6 +86,13 @@
             <i class="fa-solid fa-handshake"></i> Comercial
             <i class="fas fa-chevron-down"></i>
         </div>
+        <a href="{{ url_for('routes.tela_importar_colaboradores') }}">
+                <i class="fas fa-file-import me-2"></i> Importar Colaboradores
+        </a>
+        <a href="{{ url_for('routes.importar_notas_fiscais') }}">
+                <i class="fas fa-file-import me-2"></i> Importar Notas Fiscais
+        </a>  
+        
         <div class="sidebar-submenu" id="comercial">
             <a href="{{ url_for('routes.listar_notas_fiscais') }}">
                 <i class="fas fa-file-invoice"></i> Notas Fiscais

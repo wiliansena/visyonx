@@ -1399,6 +1399,7 @@ def importar_colaboradores():
             codigo_raw = row.iloc[0] if len(row) > 0 else None
             nome = row.iloc[1] if len(row) > 1 else None
             nome_fantasia = row.iloc[2] if len(row) > 2 else None
+            contato = row.iloc[3] if len(row) > 3 else None
 
             codigo = normalizar_codigo(str(codigo_raw))
 
@@ -1417,6 +1418,7 @@ def importar_colaboradores():
                         if valor_valido(nome_fantasia)
                         else None
                     )
+                    colaborador.contato = str(contato).strip()
                     atualizados += 1
                 else:
                     duplicados += 1
@@ -1430,6 +1432,7 @@ def importar_colaboradores():
                             if valor_valido(nome_fantasia)
                             else None
                         ),
+                        contato=str(contato).strip(),
                     )
                 )
                 importados += 1
@@ -1454,7 +1457,6 @@ def importar_colaboradores():
 
     return redirect(request.referrer)
 
-
 @bp.route("/notas-fiscais")
 @login_required
 @requer_licenca_ativa
@@ -1462,8 +1464,9 @@ def importar_colaboradores():
 def listar_notas_fiscais():
 
     page = request.args.get("page", 1, type=int)
+    per_page = 25
 
-    # filtros
+    # Filtros
     nf = request.args.get("nf", "").strip()
     data_inicio = request.args.get("data_inicio")
     data_fim = request.args.get("data_fim")
@@ -1488,7 +1491,6 @@ def listar_notas_fiscais():
             NotaFiscal.rede_loja.ilike(f"%{rede_loja}%")
         )
 
-
     if cliente:
         query = query.filter(
             NotaFiscal.cliente.ilike(f"%{cliente}%")
@@ -1504,18 +1506,29 @@ def listar_notas_fiscais():
             NotaFiscal.data_emissao <= data_fim
         )
 
-    notas = query.order_by(
-        NotaFiscal.data_emissao.desc(),
-        NotaFiscal.numero.desc()
-    ).paginate(
-        page=page,
-        per_page=25,
-        error_out=False
+    pagination = (
+        query
+        .order_by(
+            NotaFiscal.data_emissao.desc(),
+            NotaFiscal.numero.desc()
+        )
+        .paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
     )
 
     return render_template(
         "notas_fiscais/nf_listar.html",
-        notas=notas
+        notas=pagination.items,
+        pagination=pagination,
+        nf=nf,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        representante=representante,
+        rede_loja=rede_loja,
+        cliente=cliente
     )
 
 
@@ -1857,6 +1870,40 @@ def resolver_nome_representante(codigo):
 
     return col or codigo
 
+
+from sqlalchemy import func, or_
+
+from sqlalchemy import func, or_
+
+def resolver_contato_cliente(nome_cliente):
+    try:
+        if not nome_cliente:
+            return None
+
+        nome_cliente_norm = nome_cliente.strip().upper()
+
+        contato = (
+            Colaborador.query
+            .filter(
+                or_(
+                    func.upper(func.trim(Colaborador.nome)) == nome_cliente_norm,
+                    func.upper(func.trim(Colaborador.nome_fantasia)) == nome_cliente_norm
+                ),
+                Colaborador.ativo.is_(True)
+            )
+            .with_entities(Colaborador.contato)
+            .scalar()
+        )
+
+        return contato
+
+    except Exception as e:
+        print("ERRO resolver_contato_cliente:", e)
+        return None
+
+from sqlalchemy import func, or_
+
+
 @bp.route("/bi/api/notas-fiscais/rfm/clientes")
 @login_required
 @requer_licenca_ativa
@@ -1902,12 +1949,14 @@ def bi_nf_rfm_clientes():
 
         clientes.append({
             "cliente": cli,
+            "contato": resolver_contato_cliente(cli),
             "status": status_cli,
             "ultima_compra": formatar_data(ultima),
             "dias": dias,
             "pedidos": pedidos,
             "total_pares": int(total)
         })
+
 
     return jsonify({
         "clientes": clientes,

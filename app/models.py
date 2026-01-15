@@ -270,6 +270,7 @@ class Colaborador(db.Model):
     codigo = db.Column(db.String(50), unique=True, index=True, nullable=False)
     nome = db.Column(db.String(255), nullable=False)
     nome_fantasia = db.Column(db.String(255))
+    contato = db.Column(db.String(50), nullable=True)
     ativo = db.Column(db.Boolean, default=True)
 
 

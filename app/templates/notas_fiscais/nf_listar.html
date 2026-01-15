@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-
 {% block content %}
+
 <div class="container-fluid">
 
     <!-- TOPO -->
@@ -8,12 +8,14 @@
         <h3 class="mb-0">Notas Fiscais</h3>
 
         <div class="d-flex gap-2">
-            <a href="{{ url_for('routes.importar_notas_fiscais') }}" class="btn btn-outline-success">
+            <a href="{{ url_for('routes.importar_notas_fiscais') }}"
+               class="btn btn-outline-success">
                 <i class="fas fa-file-import"></i> Importar NFs
             </a>
 
-            <form method="post" action="{{ url_for('routes.zerar_notas_fiscais') }}"
-                onsubmit="return confirm('ATENÇÃO! Isso apagará TODAS as notas fiscais. Deseja continuar?')">
+            <form method="post"
+                  action="{{ url_for('routes.zerar_notas_fiscais') }}"
+                  onsubmit="return confirm('ATENÇÃO! Isso apagará TODAS as notas fiscais. Deseja continuar?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="btn btn-outline-danger">
                     <i class="fas fa-trash"></i> Zerar NFs
@@ -26,29 +28,49 @@
     <form method="get" class="row g-2 mb-3">
 
         <div class="col-md-2">
-            <input type="text" name="nf" value="{{ request.args.nf }}" class="form-control" placeholder="NF">
+            <input type="text"
+                   name="nf"
+                   value="{{ nf }}"
+                   class="form-control"
+                   placeholder="NF">
         </div>
 
         <div class="col-md-2">
-            <input type="date" name="data_inicio" value="{{ request.args.data_inicio }}" class="form-control">
+            <input type="date"
+                   name="data_inicio"
+                   value="{{ data_inicio }}"
+                   class="form-control">
         </div>
 
         <div class="col-md-2">
-            <input type="date" name="data_fim" value="{{ request.args.data_fim }}" class="form-control">
+            <input type="date"
+                   name="data_fim"
+                   value="{{ data_fim }}"
+                   class="form-control">
         </div>
 
         <div class="col-md-3">
-            <input type="text" name="representante" value="{{ request.args.representante }}" class="form-control"
-                placeholder="Representante">
-        </div>
-        <div class="col-md-3">
-            <input type="text" name="rede_loja" value="{{ request.args.rede_loja }}" class="form-control"
-                placeholder="Rede_loja">
+            <input type="text"
+                   name="representante"
+                   value="{{ representante }}"
+                   class="form-control"
+                   placeholder="Representante">
         </div>
 
         <div class="col-md-3">
-            <input type="text" name="cliente" value="{{ request.args.cliente }}" class="form-control"
-                placeholder="Cliente">
+            <input type="text"
+                   name="rede_loja"
+                   value="{{ rede_loja }}"
+                   class="form-control"
+                   placeholder="Rede / Loja">
+        </div>
+
+        <div class="col-md-3">
+            <input type="text"
+                   name="cliente"
+                   value="{{ cliente }}"
+                   class="form-control"
+                   placeholder="Cliente">
         </div>
 
         <div class="col-md-2">
@@ -74,21 +96,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% for nf in notas.items %}
+                {% for nf_item in notas %}
                 <tr>
-                    <td>{{ nf.numero }}</td>
-                    <td>{{ nf.data_emissao|br_data }}</td>
-                    <td>{{ nf.cliente }}</td>
-                    <td>{{ nf.representante }}</td>
-                    <td class="text-end">{{ nf.quantidade|br_numero }}</td>
+                    <td>{{ nf_item.numero }}</td>
+                    <td>{{ nf_item.data_emissao|br_data }}</td>
+                    <td>{{ nf_item.cliente }}</td>
+                    <td>{{ nf_item.representante }}</td>
+                    <td class="text-end">{{ nf_item.quantidade|br_numero }}</td>
                     <td class="text-end">
-                        R$ {{ nf.valor_faturado|br_moeda }}
+                        R$ {{ nf_item.valor_faturado|br_moeda }}
                     </td>
-                    <td>{{ nf.pedido }}</td>
+                    <td>{{ nf_item.pedido }}</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted">
+                    <td colspan="7"
+                        class="text-center text-muted">
                         Nenhuma nota fiscal encontrada.
                     </td>
                 </tr>
@@ -98,50 +121,71 @@
     </div>
 
     <!-- PAGINAÇÃO -->
-    {% macro url_pagina(p) %}
-    {{ url_for('routes.listar_notas_fiscais', page=p) }}
-    {% for k, v in request.args.items() if k != 'page' %}
-    &{{ k }}={{ v }}
-    {% endfor %}
-    {% endmacro %}
-
-    {% if notas.pages > 1 %}
-    <nav>
+    {% if pagination.pages > 1 %}
+    <nav class="mt-3">
         <ul class="pagination justify-content-center">
 
             <!-- Anterior -->
-            <li class="page-item {% if not notas.has_prev %}disabled{% endif %}">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                 <a class="page-link"
-                    href="{% if notas.has_prev %}{{ url_pagina(notas.prev_num) }}{% else %}#{% endif %}">
+                   href="{{ url_for('routes.listar_notas_fiscais',
+                                    page=pagination.prev_num,
+                                    nf=nf,
+                                    data_inicio=data_inicio,
+                                    data_fim=data_fim,
+                                    representante=representante,
+                                    rede_loja=rede_loja,
+                                    cliente=cliente) }}">
                     ‹ Anterior
                 </a>
             </li>
 
-            {% set inicio = notas.page - 2 %}
-            {% set fim = notas.page + 2 %}
-            {% if inicio < 1 %}{% set inicio=1 %}{% endif %} {% if fim> notas.pages %}{% set fim = notas.pages %}{%
-                endif %}
-
-                {% for p in range(inicio, fim + 1) %}
-                <li class="page-item {% if p == notas.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_pagina(p) }}">
+            {% for p in pagination.iter_pages(
+                left_edge=1,
+                right_edge=1,
+                left_current=2,
+                right_current=2
+            ) %}
+                {% if p %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    <a class="page-link"
+                       href="{{ url_for('routes.listar_notas_fiscais',
+                                        page=p,
+                                        nf=nf,
+                                        data_inicio=data_inicio,
+                                        data_fim=data_fim,
+                                        representante=representante,
+                                        rede_loja=rede_loja,
+                                        cliente=cliente) }}">
                         {{ p }}
                     </a>
                 </li>
-                {% endfor %}
-
-                <!-- Próxima -->
-                <li class="page-item {% if not notas.has_next %}disabled{% endif %}">
-                    <a class="page-link"
-                        href="{% if notas.has_next %}{{ url_pagina(notas.next_num) }}{% else %}#{% endif %}">
-                        Próxima ›
-                    </a>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
                 </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Próxima -->
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url_for('routes.listar_notas_fiscais',
+                                    page=pagination.next_num,
+                                    nf=nf,
+                                    data_inicio=data_inicio,
+                                    data_fim=data_fim,
+                                    representante=representante,
+                                    rede_loja=rede_loja,
+                                    cliente=cliente) }}">
+                    Próxima ›
+                </a>
+            </li>
 
         </ul>
     </nav>
     {% endif %}
 
-
 </div>
+
 {% endblock %}

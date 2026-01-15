@@ -459,14 +459,35 @@ function abrirRFMNotas(status) {
             d.clientes.forEach(c => {
                 tbody.append(`
                     <tr>
-                        <td>${c.cliente}</td>
-                        <td>${c.status}</td>
+                        <td>
+                            <strong>${c.cliente}</strong>
+                        </td>
+
+                        <td>
+                            ${
+                                c.contato
+                                ? `<span class="text-info">${c.contato}</span>`
+                                : `<span class="text-muted">—</span>`
+                            }
+                        </td>
+
+                        <td>
+                            <span class="badge ${
+                                c.status === "Ativo" ? "bg-success" :
+                                c.status === "Risco" ? "bg-warning text-dark" :
+                                "bg-danger"
+                            }">
+                                ${c.status}
+                            </span>
+                        </td>
+
                         <td>${c.ultima_compra}</td>
                         <td>${c.dias}</td>
                         <td>${c.pedidos}</td>
                         <td>${c.total_pares}</td>
                     </tr>
                 `);
+
             });
 
             new bootstrap.Modal(
@@ -615,6 +636,7 @@ document.addEventListener("DOMContentLoaded", carregarBI);
                     <thead>
                         <tr>
                             <th>Cliente</th>
+                            <th>Contato</th>
                             <th>Status</th>
                             <th>Última compra</th>
                             <th>Dias</th>
