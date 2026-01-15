@@ -398,14 +398,17 @@ function montarGraficoHorizontal(canvas, dados, cor) {
 
 function preencherSelect(id, lista) {
     const $el = $("#" + id);
-    $el.empty().append('<option></option>');
 
-    lista.forEach(v => {
-        if (v !== null && v !== undefined && String(v).trim() !== "") {
-            $el.append(new Option(v, v));
-        }
+    $el.empty();
+
+    $el.select2({
+        data: lista,
+        width: "100%",
+        placeholder: "Todos",
+        allowClear: true
     });
 }
+
 
 function filtrosAtuaisNotas() {
     return new URLSearchParams({
@@ -471,6 +474,24 @@ function abrirRFMNotas(status) {
             ).show();
         });
 }
+
+function preencherSelectSimples(id, lista) {
+    const $el = $("#" + id);
+    $el.empty().append('<option></option>');
+
+    lista.forEach(v => {
+        if (v) {
+            $el.append(new Option(v, v));
+        }
+    });
+
+    $el.select2({
+        width: "100%",
+        placeholder: "Todos",
+        allowClear: true
+    });
+}
+
 
 /* =========================================================
    DASHBOARD
@@ -544,13 +565,9 @@ function carregarBI() {
             if (!filtrosCarregados) {
 
                 preencherSelect("representante", d.filtros.representantes);
-                preencherSelect("rede_loja", d.filtros.redes);
 
-                $(".select2").select2({
-                    width: "100%",
-                    placeholder: "Todos",
-                    allowClear: true
-                });
+                // redes continuam como string simples
+                preencherSelectSimples("rede_loja", d.filtros.redes);
 
                 filtrosCarregados = true;
             }

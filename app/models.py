@@ -263,6 +263,15 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
         )
 
 
+class Colaborador(db.Model):
+    __tablename__ = "colaborador"
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    nome = db.Column(db.String(255), nullable=False)
+    nome_fantasia = db.Column(db.String(255))
+    ativo = db.Column(db.Boolean, default=True)
+
 
 
 #### FINANCEIRO   ###

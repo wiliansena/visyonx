@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">
+            <i class="fas fa-file-import me-2"></i>
+            Importar Colaboradores
+        </h3>
+
+        <!-- 📥 Download modelo -->
+        <a href="{{ url_for('static', filename='modelos/modelo_importacao_colaboradores.xlsx') }}"
+           class="btn btn-outline-secondary"
+           download>
+            <i class="fas fa-file-excel me-1"></i>
+            Baixar planilha modelo
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <div class="alert alert-info">
+                <strong>Regras da importação:</strong>
+                <ul class="mb-0">
+                    <li><strong>1ª coluna:</strong> Código do colaborador</li>
+                    <li><strong>2ª coluna:</strong> Nome (obrigatório)</li>
+                    <li><strong>3ª coluna:</strong> Nome Fantasia (opcional)</li>
+                    <li>O cabeçalho será ignorado</li>
+                    <li>Colunas adicionais serão ignoradas</li>
+                    <li>Linhas sem código ou nome não serão importadas</li>
+                </ul>
+            </div>
+
+            <form method="POST"
+                  action="{{ url_for('routes.importar_colaboradores') }}"
+                  enctype="multipart/form-data">
+
+                <!-- 🔐 CSRF -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="arquivo" class="form-label">
+                        Arquivo Excel (.xls ou .xlsx)
+                    </label>
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="arquivo"
+                        name="arquivo"
+                        accept=".xls,.xlsx"
+                        required
+                    >
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i>
+                        Importar
+                    </button>
+
+                    <a href="{{ url_for('routes.home') }}"
+                       class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Voltar
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

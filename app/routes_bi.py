@@ -6,7 +6,7 @@ from sqlalchemy import func
 from werkzeug.utils import secure_filename  # 🔹 Para salvar o nome do arquivo corretamente
 
 from app import db
-from app.models import Venda
+from app.models import Colaborador, Venda
 from app.forms import ImportarVendasForm, VendaForm
 from app.utils import formatar_data, formatar_moeda, formatar_numero, requer_permissao
 
@@ -925,6 +925,8 @@ from app import db, mail
 from app.utils import requer_permissao
 from app.models import Venda, AlertaInatividadeCliente
 from flask_login import current_user
+from sqlalchemy import func, case
+from app.models import Colaborador
 
 @bp.route("/comercial/rfm_nf_alerta_email", methods=["GET"])
 @requer_permissao("comercial", "ver")
@@ -962,12 +964,31 @@ def rfm_nf_alerta_email():
     # =====================================================
     rows = (
         NotaFiscal.query_empresa()
+        .outerjoin(
+            Colaborador,
+            Colaborador.codigo == NotaFiscal.representante
+        )
         .with_entities(
             NotaFiscal.cliente.label("cliente"),
             func.max(NotaFiscal.data_emissao).label("ultima_data"),
-            func.min(NotaFiscal.representante).label("representante")
+            case(
+                (
+                    Colaborador.nome_fantasia.isnot(None),
+                    Colaborador.nome_fantasia
+                ),
+                (
+                    Colaborador.nome.isnot(None),
+                    Colaborador.nome
+                ),
+                else_=NotaFiscal.representante
+            ).label("representante_nome"),
         )
-        .group_by(NotaFiscal.cliente)
+        .group_by(
+            NotaFiscal.cliente,
+            Colaborador.nome_fantasia,
+            Colaborador.nome,
+            NotaFiscal.representante
+        )
         .all()
     )
 
@@ -984,8 +1005,9 @@ def rfm_nf_alerta_email():
                 "cliente": r.cliente,
                 "ultima_data": r.ultima_data,
                 "dias": dias_sem_comprar,
-                "representante": r.representante,
+                "representante": r.representante_nome,
             })
+
 
     if not clientes_atrasados:
         return jsonify({
@@ -1338,6 +1360,100 @@ def importar_notas_fiscais():
 
     return render_template("notas_fiscais/nf_importar.html")
 
+@bp.route("/tela/colaboradores/importar", methods=["GET"])
+@login_required
+@requer_licenca_ativa
+def tela_importar_colaboradores():
+    return render_template("colaboradores/cob_importar.html")
+
+import re
+
+def normalizar_codigo(codigo):
+    return re.sub(r"\D", "", codigo or "")
+
+def valor_valido(valor):
+    return valor and str(valor).strip().lower() not in ("", "nan", "none")
+
+@bp.route("/colaboradores/importar", methods=["POST"])
+@login_required
+@requer_licenca_ativa
+def importar_colaboradores():
+    arquivo = request.files.get("arquivo")
+
+    if not arquivo:
+        flash("Nenhum arquivo enviado.", "danger")
+        return redirect(request.referrer)
+
+    try:
+        df = pd.read_excel(arquivo)
+
+        total = 0
+        importados = 0
+        atualizados = 0
+        ignorados = 0
+        duplicados = 0
+
+        for _, row in df.iterrows():
+            total += 1
+
+            codigo_raw = row.iloc[0] if len(row) > 0 else None
+            nome = row.iloc[1] if len(row) > 1 else None
+            nome_fantasia = row.iloc[2] if len(row) > 2 else None
+
+            codigo = normalizar_codigo(str(codigo_raw))
+
+            if not valor_valido(codigo) or not valor_valido(nome):
+                ignorados += 1
+                continue
+
+            colaborador = Colaborador.query.filter_by(codigo=codigo).first()
+
+            if colaborador:
+                # Detecta duplicidade por normalização
+                if colaborador.nome != str(nome).strip():
+                    colaborador.nome = str(nome).strip()
+                    colaborador.nome_fantasia = (
+                        str(nome_fantasia).strip()
+                        if valor_valido(nome_fantasia)
+                        else None
+                    )
+                    atualizados += 1
+                else:
+                    duplicados += 1
+            else:
+                db.session.add(
+                    Colaborador(
+                        codigo=codigo,
+                        nome=str(nome).strip(),
+                        nome_fantasia=(
+                            str(nome_fantasia).strip()
+                            if valor_valido(nome_fantasia)
+                            else None
+                        ),
+                    )
+                )
+                importados += 1
+
+        db.session.commit()
+
+        flash(
+            f"""
+            Importação concluída:
+            {importados} novos,
+            {atualizados} atualizados,
+            {duplicados} duplicados,
+            {ignorados} ignorados
+            (de {total} linhas).
+            """,
+            "success",
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao importar colaboradores: {str(e)}", "danger")
+
+    return redirect(request.referrer)
+
 
 @bp.route("/notas-fiscais")
 @login_required
@@ -1441,6 +1557,8 @@ from flask import request, jsonify
 from datetime import date, timedelta
 from sqlalchemy import func
 from flask import request, jsonify
+from app.models import Colaborador
+
 
 @bp.route("/bi/api/notas_fiscais")
 @login_required
@@ -1566,14 +1684,34 @@ def bi_api_notas_fiscais():
     # =====================================================
     base_filtros = NotaFiscal.query_empresa()
 
+    from sqlalchemy import case
+
     representantes = (
         base_filtros
-        .with_entities(NotaFiscal.representante)
+        .with_entities(
+            NotaFiscal.representante.label("codigo"),
+            case(
+                (
+                    Colaborador.nome_fantasia.isnot(None),
+                    Colaborador.nome_fantasia
+                ),
+                (
+                    Colaborador.nome.isnot(None),
+                    Colaborador.nome
+                ),
+                else_=NotaFiscal.representante
+            ).label("nome")
+        )
+        .outerjoin(
+            Colaborador,
+            Colaborador.codigo == NotaFiscal.representante
+        )
         .filter(NotaFiscal.representante.isnot(None))
         .distinct()
-        .order_by(NotaFiscal.representante)
+        .order_by("nome")
         .all()
     )
+
 
     redes = (
         base_filtros
@@ -1610,9 +1748,12 @@ def bi_api_notas_fiscais():
             "data_de": data_de_efetiva.strftime("%Y-%m-%d"),
             "data_ate": data_ate_efetiva.strftime("%Y-%m-%d"),
             "representantes": [
-                str(r[0]).strip()
+                {
+                    "id": str(r.codigo).strip(),
+                    "text": str(r.nome).strip()
+                }
                 for r in representantes
-                if r[0] and str(r[0]).strip()
+                if r.codigo
             ],
             "redes": [r[0] for r in redes if r[0]],
             "representante": request.args.get("representante") or "",
@@ -1689,6 +1830,33 @@ def bi_nf_rfm_cards():
 
     return jsonify(rfm)
 
+
+### HELPER DO NOME DO REPRESENTANTE JUNTANDO MODEL COLABORADOR COM NF
+def resolver_nome_representante(codigo):
+    if not codigo:
+        return "Todos"
+
+    col = (
+        Colaborador.query
+        .filter_by(codigo=codigo)
+        .with_entities(
+            case(
+                (
+                    Colaborador.nome_fantasia.isnot(None),
+                    Colaborador.nome_fantasia
+                ),
+                (
+                    Colaborador.nome.isnot(None),
+                    Colaborador.nome
+                ),
+                else_=codigo
+            )
+        )
+        .scalar()
+    )
+
+    return col or codigo
+
 @bp.route("/bi/api/notas-fiscais/rfm/clientes")
 @login_required
 @requer_licenca_ativa
@@ -1746,7 +1914,9 @@ def bi_nf_rfm_clientes():
         "filtros": {
             "data_de": formatar_data(data_de),
             "data_ate": formatar_data(data_ate),
-            "representante": request.args.get("representante") or "Todos",
+            "representante": resolver_nome_representante(
+                request.args.get("representante")),
+
             "rede_loja": request.args.get("rede_loja") or "Todas"
         }
     })
@@ -1770,11 +1940,23 @@ def bi_nf_top_crescimento():
     grupo = request.args.get("grupo", "representante")
     metrica = request.args.get("metrica", "pares")
 
-    campo_grupo = (
-        NotaFiscal.representante
-        if grupo == "representante"
-        else NotaFiscal.rede_loja
-    )
+    if grupo == "representante":
+        campo_grupo = NotaFiscal.representante
+        label_grupo = case(
+            (
+                Colaborador.nome_fantasia.isnot(None),
+                Colaborador.nome_fantasia
+            ),
+            (
+                Colaborador.nome.isnot(None),
+                Colaborador.nome
+            ),
+            else_=NotaFiscal.representante
+        )
+    else:
+        campo_grupo = NotaFiscal.rede_loja
+        label_grupo = NotaFiscal.rede_loja
+
 
     campo_valor = (
         NotaFiscal.quantidade
@@ -1787,28 +1969,39 @@ def bi_nf_top_crescimento():
     # ===============================
     atual = (
         NotaFiscal.query_empresa()
+        .outerjoin(
+            Colaborador,
+            Colaborador.codigo == NotaFiscal.representante
+        )
         .filter(NotaFiscal.data_emissao.between(data_de, data_ate))
         .with_entities(
-            campo_grupo.label("nome"),
+            campo_grupo.label("codigo"),
+            label_grupo.label("nome"),
             func.sum(campo_valor).label("atual")
         )
-        .group_by(campo_grupo)
+        .group_by(campo_grupo, label_grupo)
         .subquery()
     )
+
 
     # ===============================
     # PERÍODO ANTERIOR
     # ===============================
     anterior = (
         NotaFiscal.query_empresa()
+        .outerjoin(
+            Colaborador,
+            Colaborador.codigo == NotaFiscal.representante
+        )
         .filter(NotaFiscal.data_emissao.between(data_de_ant, data_ate_ant))
         .with_entities(
-            campo_grupo.label("nome"),
+            campo_grupo.label("codigo"),
             func.sum(campo_valor).label("anterior")
         )
         .group_by(campo_grupo)
         .subquery()
     )
+
 
     # ===============================
     # VARIAÇÃO (REGRA DE BI)
@@ -1832,9 +2025,9 @@ def bi_nf_top_crescimento():
             func.coalesce(anterior.c.anterior, 0).label("anterior"),
             variacao
         )
-        .outerjoin(anterior, atual.c.nome == anterior.c.nome)
-        .filter(atual.c.nome.isnot(None))
-        .filter(atual.c.atual > 0)  # 🔥 essencial
+        .outerjoin(anterior, atual.c.codigo == anterior.c.codigo)
+        .filter(atual.c.codigo.isnot(None))
+        .filter(atual.c.atual > 0)
         .order_by(db.desc(variacao))
         .limit(20)
         .all()
@@ -1856,10 +2049,6 @@ def bi_nf_top_crescimento():
 
     return jsonify({"dados": dados})
 
-
-from datetime import date, timedelta
-from sqlalchemy import func, case
-
 @bp.route("/bi/api/notas-fiscais/top-queda")
 @login_required
 @requer_licenca_ativa
@@ -1876,51 +2065,71 @@ def bi_nf_top_queda():
     grupo = request.args.get("grupo", "representante")
     metrica = request.args.get("metrica", "pares")
 
-    campo_grupo = (
-        NotaFiscal.representante
-        if grupo == "representante"
-        else NotaFiscal.rede_loja
-    )
-
     campo_valor = (
         NotaFiscal.quantidade
         if metrica == "pares"
         else NotaFiscal.valor_faturado
     )
 
-    # ===============================
+    # =====================================================
+    # DEFINIÇÃO DO GRUPO
+    # =====================================================
+    if grupo == "representante":
+        campo_codigo = NotaFiscal.representante
+
+        campo_nome = case(
+            (
+                Colaborador.nome_fantasia.isnot(None),
+                Colaborador.nome_fantasia
+            ),
+            (
+                Colaborador.nome.isnot(None),
+                Colaborador.nome
+            ),
+            else_=NotaFiscal.representante
+        )
+    else:
+        campo_codigo = NotaFiscal.rede_loja
+        campo_nome = NotaFiscal.rede_loja
+
+    # =====================================================
     # PERÍODO ATUAL
-    # ===============================
+    # =====================================================
     atual = (
         NotaFiscal.query_empresa()
+        .outerjoin(
+            Colaborador,
+            Colaborador.codigo == NotaFiscal.representante
+        )
         .filter(NotaFiscal.data_emissao.between(data_de, data_ate))
         .with_entities(
-            campo_grupo.label("nome"),
+            campo_codigo.label("codigo"),
+            campo_nome.label("nome"),
             func.sum(campo_valor).label("atual")
         )
-        .group_by(campo_grupo)
+        .group_by(campo_codigo, campo_nome)
         .subquery()
     )
 
-    # ===============================
+    # =====================================================
     # PERÍODO ANTERIOR
-    # ===============================
+    # =====================================================
     anterior = (
         NotaFiscal.query_empresa()
         .filter(NotaFiscal.data_emissao.between(data_de_ant, data_ate_ant))
         .with_entities(
-            campo_grupo.label("nome"),
+            campo_codigo.label("codigo"),
             func.sum(campo_valor).label("anterior")
         )
-        .group_by(campo_grupo)
+        .group_by(campo_codigo)
         .subquery()
     )
 
-    # ===============================
+    # =====================================================
     # VARIAÇÃO (QUEDA REAL)
-    # ===============================
+    # =====================================================
     variacao = case(
-        # se não existia antes, não existe "queda"
+        # se não existia antes, não é queda
         (func.coalesce(anterior.c.anterior, 0) == 0, None),
         else_=(
             (atual.c.atual - anterior.c.anterior)
@@ -1928,9 +2137,9 @@ def bi_nf_top_queda():
         )
     ).label("variacao")
 
-    # ===============================
+    # =====================================================
     # QUERY FINAL
-    # ===============================
+    # =====================================================
     query = (
         db.session.query(
             atual.c.nome,
@@ -1938,18 +2147,18 @@ def bi_nf_top_queda():
             func.coalesce(anterior.c.anterior, 0).label("anterior"),
             variacao
         )
-        .outerjoin(anterior, atual.c.nome == anterior.c.nome)
-        .filter(atual.c.nome.isnot(None))
+        .outerjoin(anterior, atual.c.codigo == anterior.c.codigo)
+        .filter(atual.c.codigo.isnot(None))
         .filter(variacao.isnot(None))
         .filter(variacao < 0)
         .order_by(variacao)
-        .limit(20)
+        .limit(10)
         .all()
     )
 
-    # ===============================
+    # =====================================================
     # SERIALIZAÇÃO
-    # ===============================
+    # =====================================================
     dados = [
         {
             "nome": r.nome,
@@ -1958,6 +2167,6 @@ def bi_nf_top_queda():
             "percentual": round(r.variacao * 100, 2)
         }
         for r in query
-    ][:10]
+    ]
 
     return jsonify({"dados": dados})
