@@ -80,29 +80,42 @@
         <hr>
 
 
-        <!-- COMERCIAL -->
-        {% if ('comercial', 'ver') in g.permissoes %}
-        <div class="sidebar-category" onclick="toggleMenu('comercial')">
-            <i class="fa-solid fa-handshake"></i> Comercial
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <a href="{{ url_for('routes.tela_importar_colaboradores') }}">
-                <i class="fas fa-file-import me-2"></i> Importar Colaboradores
-        </a>
-        <a href="{{ url_for('routes.importar_notas_fiscais') }}">
-                <i class="fas fa-file-import me-2"></i> Importar Notas Fiscais
-        </a>  
-        
-        <div class="sidebar-submenu" id="comercial">
-            <a href="{{ url_for('routes.listar_notas_fiscais') }}">
-                <i class="fas fa-file-invoice"></i> Notas Fiscais
-            </a>
-            <a href="{{ url_for('routes.bi_notas_fiscais_dashboard') }}">
-                <i class="fas fa-tachometer-alt"></i>Gráfico Comercial
-            </a>
-                       
-        </div>
-        {% endif %}
+<!-- COMERCIAL -->
+{% if ('comercial', 'ver') in g.permissoes %}
+<div class="sidebar-category" onclick="toggleMenu('comercial')">
+    <i class="fa-solid fa-handshake"></i> Comercial
+    <i class="fas fa-chevron-down"></i>
+</div>
+
+<div class="sidebar-submenu" id="comercial">
+
+    <!-- Importações (ação secundária) -->
+    <a href="{{ url_for('routes.tela_importar_colaboradores') }}" class="submenu-import">
+        <i class="fas fa-upload"></i>
+        <span>Importar Colaboradores</span>
+    </a>
+
+    <a href="{{ url_for('routes.importar_notas_fiscais') }}" class="submenu-import">
+        <i class="fas fa-upload"></i>
+        <span>Importar Notas Fiscais</span>
+    </a>
+
+    <div class="submenu-divider"></div>
+
+    <!-- Navegação principal -->
+    <a href="{{ url_for('routes.listar_notas_fiscais') }}">
+        <i class="fas fa-file-invoice"></i>
+        <span>Notas Fiscais</span>
+    </a>
+
+    <a href="{{ url_for('routes.bi_notas_fiscais_dashboard') }}">
+        <i class="fas fa-chart-line"></i>
+        <span>Gráfico Comercial</span>
+    </a>
+
+</div>
+{% endif %}
+
 
         <!-- FINANCEIRO -->
         {% if ('financeiro', 'ver') in g.permissoes %}

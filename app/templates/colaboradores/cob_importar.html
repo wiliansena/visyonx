@@ -10,12 +10,10 @@
         </h3>
 
         <!-- 📥 Download modelo -->
-        <a href="{{ url_for('static', filename='modelos/modelo_importacao_colaboradores.xlsx') }}"
-           class="btn btn-outline-secondary"
-           download>
-            <i class="fas fa-file-excel me-1"></i>
-            Baixar planilha modelo
+        <a href="/bi/api/colaboradores/modelo-importacao" class="btn btn-outline-light btn-sm">
+            ⬇ Baixar modelo de importação
         </a>
+
     </div>
 
     <div class="card shadow-sm">
@@ -34,9 +32,7 @@
                 </ul>
             </div>
 
-            <form method="POST"
-                  action="{{ url_for('routes.importar_colaboradores') }}"
-                  enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('routes.importar_colaboradores') }}" enctype="multipart/form-data">
 
                 <!-- 🔐 CSRF -->
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -45,14 +41,7 @@
                     <label for="arquivo" class="form-label">
                         Arquivo Excel (.xls ou .xlsx)
                     </label>
-                    <input
-                        type="file"
-                        class="form-control"
-                        id="arquivo"
-                        name="arquivo"
-                        accept=".xls,.xlsx"
-                        required
-                    >
+                    <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".xls,.xlsx" required>
                 </div>
 
                 <div class="d-flex gap-2">
@@ -61,8 +50,7 @@
                         Importar
                     </button>
 
-                    <a href="{{ url_for('routes.home') }}"
-                       class="btn btn-secondary">
+                    <a href="{{ url_for('routes.home') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
                         Voltar
                     </a>

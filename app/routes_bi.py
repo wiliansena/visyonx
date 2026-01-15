@@ -1457,6 +1457,41 @@ def importar_colaboradores():
 
     return redirect(request.referrer)
 
+
+@bp.route("/bi/api/colaboradores/modelo-importacao")
+@login_required
+@requer_licenca_ativa
+@requer_permissao("comercial", "ver")
+def baixar_modelo_colaboradores():
+
+    from io import BytesIO
+    from openpyxl import Workbook
+    from flask import send_file
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Modelo_Colaboradores"
+
+    # Cabeçalhos (EXATOS para o import)
+    ws.append([
+        "codigo",
+        "nome",
+        "nome_fantasia",
+        "contato"
+    ])
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="modelo_importacao_colaboradores.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
 @bp.route("/notas-fiscais")
 @login_required
 @requer_licenca_ativa
