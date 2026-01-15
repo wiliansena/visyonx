@@ -1491,6 +1491,66 @@ def baixar_modelo_colaboradores():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+@bp.route("/colaboradores")
+@login_required
+@requer_licenca_ativa
+@requer_permissao("comercial", "ver")
+def listar_colaboradores():
+
+    page = request.args.get("page", 1, type=int)
+    per_page = 25
+
+    # Filtros
+    codigo = request.args.get("codigo", "").strip()
+    nome = request.args.get("nome", "").strip()
+    nome_fantasia = request.args.get("nome_fantasia", "").strip()
+    contato = request.args.get("contato", "").strip()
+    ativo = request.args.get("ativo", "").strip()
+
+    query = Colaborador.query
+
+    if codigo:
+        query = query.filter(Colaborador.codigo.ilike(f"%{codigo}%"))
+
+    if nome:
+        query = query.filter(Colaborador.nome.ilike(f"%{nome}%"))
+
+    if nome_fantasia:
+        query = query.filter(
+            Colaborador.nome_fantasia.ilike(f"%{nome_fantasia}%")
+        )
+
+    if contato:
+        query = query.filter(
+            Colaborador.contato.ilike(f"%{contato}%")
+        )
+
+    if ativo == "1":
+        query = query.filter(Colaborador.ativo.is_(True))
+    elif ativo == "0":
+        query = query.filter(Colaborador.ativo.is_(False))
+
+    pagination = (
+        query
+        .order_by(Colaborador.nome.asc())
+        .paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+    )
+
+    return render_template(
+        "colaboradores/cob_listar.html",
+        colaboradores=pagination.items,
+        pagination=pagination,
+        codigo=codigo,
+        nome=nome,
+        nome_fantasia=nome_fantasia,
+        contato=contato,
+        ativo=ativo
+    )
+
 
 @bp.route("/notas-fiscais")
 @login_required

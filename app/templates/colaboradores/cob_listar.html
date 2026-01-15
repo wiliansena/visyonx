@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- TOPO -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Colaboradores</h3>
+
+        <div class="d-flex gap-2">
+            <a href="/bi/api/colaboradores/modelo-importacao"
+               class="btn btn-secondary">
+                <i class="fas fa-download"></i> Baixar Planilha Modelo
+            </a>
+
+            <a href="{{ url_for('routes.tela_importar_colaboradores') }}"
+               class="btn btn-success">
+                <i class="fas fa-file-import"></i> Importar Colaboradores
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <form method="get" class="row g-2 mb-3">
+
+        <div class="col-md-2">
+            <input type="text"
+                   name="codigo"
+                   value="{{ codigo }}"
+                   class="form-control"
+                   placeholder="Código">
+        </div>
+
+        <div class="col-md-3">
+            <input type="text"
+                   name="nome"
+                   value="{{ nome }}"
+                   class="form-control"
+                   placeholder="Nome">
+        </div>
+
+        <div class="col-md-3">
+            <input type="text"
+                   name="nome_fantasia"
+                   value="{{ nome_fantasia }}"
+                   class="form-control"
+                   placeholder="Nome Fantasia">
+        </div>
+
+        <div class="col-md-2">
+            <input type="text"
+                   name="contato"
+                   value="{{ contato }}"
+                   class="form-control"
+                   placeholder="Contato">
+        </div>
+
+        <div class="col-md-1">
+            <select name="ativo" class="form-control">
+                <option value="">Status</option>
+                <option value="1" {% if ativo == "1" %}selected{% endif %}>Ativo</option>
+                <option value="0" {% if ativo == "0" %}selected{% endif %}>Inativo</option>
+            </select>
+        </div>
+
+        <div class="col-md-1">
+            <button class="btn btn-secondary w-100">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+
+    </form>
+
+    <!-- TABELA -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Nome Fantasia</th>
+                    <th>Contato</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in colaboradores %}
+                <tr>
+                    <td>{{ c.codigo }}</td>
+                    <td><strong>{{ c.nome }}</strong></td>
+                    <td>{{ c.nome_fantasia or "—" }}</td>
+                    <td>{{ c.contato or "—" }}</td>
+                    <td>
+                        {% if c.ativo %}
+                            <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inativo</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        Nenhum colaborador encontrado.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if pagination.pages > 1 %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url_for('routes.listar_colaboradores',
+                                    page=pagination.prev_num,
+                                    codigo=codigo,
+                                    nome=nome,
+                                    nome_fantasia=nome_fantasia,
+                                    contato=contato,
+                                    ativo=ativo) }}">
+                    ‹ Anterior
+                </a>
+            </li>
+
+            {% for p in pagination.iter_pages(
+                left_edge=1,
+                right_edge=1,
+                left_current=2,
+                right_current=2
+            ) %}
+                {% if p %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    <a class="page-link"
+                       href="{{ url_for('routes.listar_colaboradores',
+                                        page=p,
+                                        codigo=codigo,
+                                        nome=nome,
+                                        nome_fantasia=nome_fantasia,
+                                        contato=contato,
+                                        ativo=ativo) }}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url_for('routes.listar_colaboradores',
+                                    page=pagination.next_num,
+                                    codigo=codigo,
+                                    nome=nome,
+                                    nome_fantasia=nome_fantasia,
+                                    contato=contato,
+                                    ativo=ativo) }}">
+                    Próxima ›
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+{% endblock %}
