@@ -216,24 +216,12 @@
 
       {% if ('comercial', 'ver') in g.permissoes %}
       <div class="grid-item">
-        <a href="{{ url_for('routes.vendas_dashboard_avancado') }}" class="home-card">
+        <a href="{{ url_for('routes.bi_notas_fiscais_dashboard') }}" class="home-card">
           <i class="fa-solid fa-gauge"></i>
-          <span>VENDAS DASHBOARD</span>
+          <span>GRÁFICO COMERCIAL</span>
         </a>
       </div>
       {% endif %}
-
-
-      {% if ('venda', 'ver') in g.permissoes %}
-      <div class="grid-item">
-        <a href="{{ url_for('routes.vendas_dashboard_rede') }}" class="home-card">
-          <i class="fas fa-trophy"></i>
-          <span>(BI) REDE DE LOJA</span>
-        </a>
-      </div>
-      {% endif %}
-
-
 
 
       <!-- Versão PC sempre visível -->

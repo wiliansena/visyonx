@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h3 class="mb-4">
+        {{ venda and "Editar Venda" or "Nova Venda" }}
+    </h3>
+
+    <form method="post">
+        {{ form.hidden_tag() }}
+
+        <div class="row">
+            <div class="col-md-4">
+                {{ form.representante.label }}
+                {{ form.representante(class="form-control") }}
+            </div>
+
+            <div class="col-md-4">
+                {{ form.cliente.label }}
+                {{ form.cliente(class="form-control") }}
+            </div>
+
+            <div class="col-md-4">
+                {{ form.pedido.label }}
+                {{ form.pedido(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-2">
+                {{ form.estado.label }}
+                {{ form.estado(class="form-control") }}
+            </div>
+
+            <div class="col-md-4">
+                {{ form.municipio.label }}
+                {{ form.municipio(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+                {{ form.data_inclusao.label }}
+                {{ form.data_inclusao(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+                {{ form.quantidade.label }}
+                {{ form.quantidade(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-3">
+                {{ form.valor.label }}
+                {{ form.valor(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+                {{ form.produto.label }}
+                {{ form.produto(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+                {{ form.grupo.label }}
+                {{ form.grupo(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+                {{ form.regiao.label }}
+                {{ form.regiao(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                {{ form.rede_loja.label }}
+                {{ form.rede_loja(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button class="btn btn-success">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+            <a href="{{ url_for('routes.bi_listar_vendas') }}"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}

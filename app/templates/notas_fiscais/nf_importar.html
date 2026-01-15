@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h4 class="mb-3">
+        Importar Notas Fiscais
+    </h4>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="POST" enctype="multipart/form-data">
+                
+                <div class="mb-3">
+                    <label class="form-label">
+                        Planilha de Notas Fiscais
+                    </label>
+                    <input 
+                        type="file" 
+                        name="arquivo" 
+                        class="form-control"
+                        accept=".xls,.xlsx"
+                        required
+                    >
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong>Atenção:</strong>
+                    <ul class="mb-0">
+                        <li>O arquivo deve estar no formato Excel (.xls ou .xlsx)</li>
+                        <li>Apenas as linhas de Nota Fiscal serão importadas</li>
+                        <li>Parcelas e totais são ignorados</li>
+                        <li>Notas já importadas não serão duplicadas</li>
+                    </ul>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary">
+                        Importar
+                    </button>
+
+                    <a href="{{ url_for('routes.home') }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

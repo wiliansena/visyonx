@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Vendas</h3>
+
+        <a href="{{ url_for('routes.bi_nova_venda') }}"
+           class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Venda
+        </a>
+        <a class="btn btn-outline-success" href="{{ url_for('routes.importar_vendas') }}">Importar vendas</a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <input type="text"
+                   name="busca"
+                   value="{{ busca }}"
+                   class="form-control"
+                   placeholder="Buscar por pedido, cliente, representante ou produto">
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-secondary w-100">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Pedido</th>
+                    <th>Cliente</th>
+                    <th>Representante</th>
+                    <th>Data</th>
+                    <th class="text-end">Qtd</th>
+                    <th class="text-end">Valor</th>
+                    <th class="text-center" style="width: 140px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vendas %}
+                <tr>
+                    <td>{{ v.pedido }}</td>
+                    <td>{{ v.cliente }}</td>
+                    <td>{{ v.representante }}</td>
+                    <td>{{ v.data_inclusao.strftime('%d/%m/%Y') }}</td>
+                    <td class="text-end">{{ v.quantidade }}</td>
+                    <td class="text-end">
+                        R$ {{ "%.2f"|format(v.valor or 0) }}
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ url_for('routes.bi_editar_venda', id=v.id) }}"
+                           class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+
+                        <form method="post"
+                              action="{{ url_for('routes.bi_excluir_venda', id=v.id) }}"
+                              class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Excluir esta venda?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Nenhuma venda encontrada.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav>
+        <ul class="pagination">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{{ url_for('routes.bi_listar_vendas', page=pagination.prev_num, busca=busca) }}">
+                    Anterior
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{ pagination.page }} de {{ pagination.pages }}
+                </span>
+            </li>
+
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{{ url_for('routes.bi_listar_vendas', page=pagination.next_num, busca=busca) }}">
+                    Próxima
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}

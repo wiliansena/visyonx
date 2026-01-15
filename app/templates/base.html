@@ -87,16 +87,13 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div class="sidebar-submenu" id="comercial">
-            <a href="{{ url_for('routes.listar_vendas') }}"><i class="fa-solid fa-file-invoice-dollar"></i>
-                Vendas</a>
-            <a href="{{ url_for('routes.vendas_dashboard_avancado') }}">
-                <i class="fa-solid fa-gauge"></i> (BI) Vendas
+            <a href="{{ url_for('routes.listar_notas_fiscais') }}">
+                <i class="fas fa-file-invoice"></i> Notas Fiscais
             </a>
-                        <a href="{{ url_for('routes.vendas_dashboard_rede') }}">
-                <i class="fa-solid fa-gauge"></i> (BI) Redes de Loja
+            <a href="{{ url_for('routes.bi_notas_fiscais_dashboard') }}">
+                <i class="fas fa-tachometer-alt"></i>Gráfico Comercial
             </a>
-            
-            
+                       
         </div>
         {% endif %}
 
@@ -107,10 +104,10 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div class="sidebar-submenu" id="financeiro">
-            <a href="{{ url_for('routes.listar_titulos') }}">
+            <a href="{{ url_for('routes.home') }}">
                 <i class="fa-solid fa-gauge"></i> Títulos (à Receber)
             </a>
-            <a href="{{ url_for('routes.financeiro_dashboard') }}">
+            <a href="{{ url_for('routes.home') }}">
                 <i class="fa-solid fa-gauge"></i> BI Financeiro I
             </a>         
         </div>

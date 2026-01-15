@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, IntegerField
-from wtforms.validators import DataRequired, Email, Length
+from wtforms.validators import DataRequired, Email, Length, Optional
 from wtforms import PasswordField, SubmitField
 
 
@@ -19,6 +19,10 @@ class NovaEmpresaForm(FlaskForm):
         "Nome da Empresa",
         validators=[DataRequired(), Length(max=120)]
     )
+    email = StringField(
+        "(E-mail) da Empresa",
+        validators=[Optional(), Email()]
+    )
 
     admin_nome = StringField(
         "Nome do Administrador",
@@ -26,7 +30,7 @@ class NovaEmpresaForm(FlaskForm):
     )
 
     admin_email = StringField(
-        "E-mail do Administrador",
+        "(E-mail) do Administrador",
         validators=[DataRequired(), Email(), Length(max=120)]
     )
 

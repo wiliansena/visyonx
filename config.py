@@ -51,7 +51,7 @@ class Config:
     MAIL_USERNAME = "wilian.sennah@gmail.com"
     MAIL_PASSWORD = "rfqu izax uftn elih"  # app password
     MAIL_DEFAULT_SENDER = (
-        "VISYON X - BI Comercial",
+        "VISYON X",
         "wilian.sennah@gmail.com"
     )
 

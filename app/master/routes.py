@@ -44,6 +44,14 @@ def nova_empresa():
             return render_template("master/empresa_nova.html", form=form)
 
         # 🔒 evita email duplicado (GLOBAL)
+        ## EMAIL DA EMPRESA
+        email_emp = form.email.data.lower()
+        email_in = Usuario.query.filter_by(email_emp=email_emp).first()
+        if email_in:
+            flash("Já existe uma empresa com esse e-mail.", "danger")
+            return render_template("master/empresa_nova.html", form=form)
+        
+        # EMAIL DO USUARIO ADMIN
         email_admin = form.admin_email.data.lower()
         email_existe = Usuario.query.filter_by(email=email_admin).first()
         if email_existe:
@@ -56,6 +64,7 @@ def nova_empresa():
             # =====================================================
             empresa = Empresa(
                 nome=form.nome.data,
+                email=form.email.data,
                 ativa=True
             )
             db.session.add(empresa)

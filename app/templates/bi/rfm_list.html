@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>RFM — {{ status }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            background: #0b0f14;
+            color: #e5e7eb;
+            font-family: Inter, system-ui, sans-serif;
+        }
+
+        .container {
+            padding: 16px;
+        }
+
+        h2 {
+            margin: 0 0 14px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #1f2937;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        td {
+            color: #f1f5f9;
+        }
+
+        .status {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .Ativo {
+            background: rgba(34, 197, 94, .18);
+            color: #86efac;
+        }
+
+        .Risco {
+            background: rgba(245, 158, 11, .18);
+            color: #fcd34d;
+        }
+
+        .Inativo {
+            background: rgba(239, 68, 68, .18);
+            color: #fca5a5;
+        }
+
+        .empty {
+            text-align: center;
+            color: #9ca3af;
+            padding: 40px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Clientes — {{ status }}</h2>
+        <div class="mb-3 small text-muted">
+            <strong>Filtros aplicados:</strong>
+            Período:
+            {{ filtros.data_de or "—" }} até {{ filtros.data_ate or "—" }} |
+            Representante: {{ filtros.representante or "Todos" }} |
+            UF: {{ filtros.uf or "Todas" }} |
+            Rede: {{ filtros.rede_loja or "Todas" }}
+        </div>
+
+
+        {% if clientes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Status</th>
+                    <th>Última compra</th>
+                    <th>Dias sem comprar</th>
+                    <th>Freq. pedidos</th>
+                    <th>Total de pares</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clientes %}
+                <tr>
+                    <td>{{ c.cliente }}</td>
+
+                    <td>
+                        <span class="badge
+            {% if c.status == 'Ativo' %}bg-success
+            {% elif c.status == 'Risco' %}bg-warning text-dark
+            {% else %}bg-danger{% endif %}">
+                            {{ c.status }}
+                        </span>
+                    </td>
+
+                    <td>{{ c.ultima_compra | br_data }}</td>
+                    <td>{{ c.dias | br_numero }}</td>
+                    <td>{{ c.freq | br_numero }}</td>
+                    <td>{{ c.total | br_numero }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+        {% else %}
+        <div class="empty">Nenhum cliente encontrado.</div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

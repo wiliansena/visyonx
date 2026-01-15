@@ -21,6 +21,7 @@ class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(120), nullable=False)
     cnpj = db.Column(db.String(18), unique=True, nullable=True)
+    email = db.Column(db.String(255))
 
     ativa = db.Column(db.Boolean, default=True)
     criada_em = db.Column(db.DateTime, default=utc_now)
@@ -162,10 +163,20 @@ class LicencaSistema(EmpresaQueryMixin, db.Model):
 
 
 #### VENDAS #####
-class Venda(db.Model):
+class Venda(EmpresaQueryMixin, db.Model):
     __tablename__ = "venda"
 
     id = db.Column(db.Integer, primary_key=True)
+
+    #MULTIEMPRESA
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    empresa = db.relationship("Empresa")
 
     # identificação comercial
     representante = db.Column(db.String(150), nullable=False, index=True)
@@ -192,27 +203,85 @@ class Venda(db.Model):
         return f"<Venda {self.pedido} - {self.estado} R$ {self.valor}>"
 
 
-class RefVenda(db.Model):
-    __tablename__ = "ref_venda"
-    id          = db.Column(db.Integer, primary_key=True)
-    # código completo, ex.: "ABC.JHI"
-    referencia  = db.Column(db.String(120), nullable=False, unique=True, index=True)
-    # partes da referência
-    linha       = db.Column(db.String(40), index=True)   # "ABC"
-    codigo      = db.Column(db.String(120), index=True)  # "JHI"
-    # extras do relatório
-    combinacao  = db.Column(db.String(240))
-    quantidade  = db.Column(db.Integer, nullable=False, default=0)
-    media_pct   = db.Column(db.Float)  # opcional
-    atualizado_em = db.Column(db.DateTime, default=utc_now, nullable=False)
+##### NOTA FISCAL   #######
+class NotaFiscal(EmpresaQueryMixin, db.Model):
+    __tablename__ = "nota_fiscal"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # MULTIEMPRESA
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+    empresa = db.relationship("Empresa")
+
+    # Identificação da NF
+    numero = db.Column(db.String(20), nullable=False, index=True)
+    serie = db.Column(db.String(10), nullable=True, index=True)
+    cfop = db.Column(db.String(10), nullable=True, index=True)
+
+    # Datas
+    data_emissao = db.Column(db.Date, nullable=False, index=True)
+
+    # Comercial
+    cliente = db.Column(db.String(200), nullable=False, index=True)
+    representante = db.Column(db.String(150), nullable=True, index=True)
+    pedido = db.Column(db.Text, nullable=True, index=True)
+
+    # Quantitativos
+    quantidade = db.Column(db.Integer, nullable=True)
+    valor_faturado = db.Column(db.Numeric(14, 2), nullable=False)
+
+    # 🚚 COD DE TRANSPORTE
+    codigo_transportadora = db.Column(db.String(20), nullable=True)
+    # REDE DE LOJA AGRUPAR
+    rede_loja = db.Column(db.String(150), index=True)
+
+
+    # Controle
+    created_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now()
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "empresa_id", "numero", "serie",
+            name="uq_nf_empresa_numero_serie"
+        ),
+    )
+
+    def __repr__(self):
+        return (
+            f"<NF {self.numero}/{self.serie} "
+            f"{self.cliente} "
+            f"Fat: {self.valor_faturado} "
+            f"Transp: {self.valor_transporte}>"
+        )
+
+
 
 
 #### FINANCEIRO   ###
-class FinanceiroTitulo(db.Model):
+class FinanceiroTitulo(EmpresaQueryMixin, db.Model):
     __tablename__ = "financeiro_titulo"
 
     id             = db.Column(db.Integer, primary_key=True)
-    empresa        = db.Column(db.String(120))
+
+    #MULTIEMPRESA
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    empresa = db.relationship("Empresa")
+
+    empresa_nome   = db.Column(db.String(120))
     cliente        = db.Column(db.String(180))
     representante  = db.Column(db.String(120))
     especie        = db.Column(db.String(80))
@@ -230,7 +299,7 @@ class FinanceiroTitulo(db.Model):
         db.Index("ix_fin_tit_cliente", "cliente"),
         db.Index("ix_fin_tit_representante", "representante"),
         db.UniqueConstraint(
-            "empresa", "numero_doc", "emissao", "vencimento", "valor",
+            "empresa_nome", "numero_doc", "emissao", "vencimento", "valor",
             name="uq_fin_titulo_emp_doc_emis_venc_valor"
         ),
 
@@ -244,10 +313,19 @@ class FinanceiroTitulo(db.Model):
             return "ABERTO"
     
 
-class AlertaInatividadeCliente(db.Model):
+class AlertaInatividadeCliente(EmpresaQueryMixin, db.Model):
     __tablename__ = "alerta_inatividade_cliente"
 
     id = db.Column(db.Integer, primary_key=True)
+    #MULTIEMPRESA
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    empresa = db.relationship("Empresa")
     cliente = db.Column(db.String(150), nullable=False, index=True)
     ultima_data_venda = db.Column(db.Date, nullable=False)
     data_alerta = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

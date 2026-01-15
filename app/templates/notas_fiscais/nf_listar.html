@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- TOPO -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Notas Fiscais</h3>
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('routes.importar_notas_fiscais') }}" class="btn btn-outline-success">
+                <i class="fas fa-file-import"></i> Importar NFs
+            </a>
+
+            <form method="post" action="{{ url_for('routes.zerar_notas_fiscais') }}"
+                onsubmit="return confirm('ATENÇÃO! Isso apagará TODAS as notas fiscais. Deseja continuar?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> Zerar NFs
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <form method="get" class="row g-2 mb-3">
+
+        <div class="col-md-2">
+            <input type="text" name="nf" value="{{ request.args.nf }}" class="form-control" placeholder="NF">
+        </div>
+
+        <div class="col-md-2">
+            <input type="date" name="data_inicio" value="{{ request.args.data_inicio }}" class="form-control">
+        </div>
+
+        <div class="col-md-2">
+            <input type="date" name="data_fim" value="{{ request.args.data_fim }}" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <input type="text" name="representante" value="{{ request.args.representante }}" class="form-control"
+                placeholder="Representante">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="rede_loja" value="{{ request.args.rede_loja }}" class="form-control"
+                placeholder="Rede_loja">
+        </div>
+
+        <div class="col-md-3">
+            <input type="text" name="cliente" value="{{ request.args.cliente }}" class="form-control"
+                placeholder="Cliente">
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-secondary w-100">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+        </div>
+
+    </form>
+
+    <!-- TABELA -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>NF</th>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Representante</th>
+                    <th class="text-end">Qtd</th>
+                    <th class="text-end">Valor</th>
+                    <th>Pedido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nf in notas.items %}
+                <tr>
+                    <td>{{ nf.numero }}</td>
+                    <td>{{ nf.data_emissao|br_data }}</td>
+                    <td>{{ nf.cliente }}</td>
+                    <td>{{ nf.representante }}</td>
+                    <td class="text-end">{{ nf.quantidade|br_numero }}</td>
+                    <td class="text-end">
+                        R$ {{ nf.valor_faturado|br_moeda }}
+                    </td>
+                    <td>{{ nf.pedido }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Nenhuma nota fiscal encontrada.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% macro url_pagina(p) %}
+    {{ url_for('routes.listar_notas_fiscais', page=p) }}
+    {% for k, v in request.args.items() if k != 'page' %}
+    &{{ k }}={{ v }}
+    {% endfor %}
+    {% endmacro %}
+
+    {% if notas.pages > 1 %}
+    <nav>
+        <ul class="pagination justify-content-center">
+
+            <!-- Anterior -->
+            <li class="page-item {% if not notas.has_prev %}disabled{% endif %}">
+                <a class="page-link"
+                    href="{% if notas.has_prev %}{{ url_pagina(notas.prev_num) }}{% else %}#{% endif %}">
+                    ‹ Anterior
+                </a>
+            </li>
+
+            {% set inicio = notas.page - 2 %}
+            {% set fim = notas.page + 2 %}
+            {% if inicio < 1 %}{% set inicio=1 %}{% endif %} {% if fim> notas.pages %}{% set fim = notas.pages %}{%
+                endif %}
+
+                {% for p in range(inicio, fim + 1) %}
+                <li class="page-item {% if p == notas.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_pagina(p) }}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                <!-- Próxima -->
+                <li class="page-item {% if not notas.has_next %}disabled{% endif %}">
+                    <a class="page-link"
+                        href="{% if notas.has_next %}{{ url_pagina(notas.next_num) }}{% else %}#{% endif %}">
+                        Próxima ›
+                    </a>
+                </li>
+
+        </ul>
+    </nav>
+    {% endif %}
+
+
+</div>
+{% endblock %}

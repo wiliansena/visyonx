@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>BI de Notas Fiscais</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #0b0f14;
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .card {
+            background: linear-gradient(180deg, #111827, #0f1621);
+            border: 1px solid #1f2a37;
+            border-radius: 16px;
+        }
+
+        .form-control {
+            background: #0d131b;
+            color: #e5e7eb;
+            border: 1px solid #1f2a37;
+            border-radius: 10px;
+        }
+
+        /* ===============================
+           SELECT2 — DARK MODE FIX REAL
+        =============================== */
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            background: #0d131b;
+            border: 1px solid #1f2a37;
+            border-radius: 10px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__rendered {
+            color: #e5e7eb !important;
+            line-height: 38px !important;
+            padding-left: 12px;
+            padding-right: 30px;
+        }
+
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__placeholder {
+            color: #64748b !important;
+        }
+
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__arrow {
+            height: 38px;
+            right: 8px;
+        }
+
+        .select2-container--default
+        .select2-selection--single
+        .select2-selection__arrow b {
+            border-color: #94a3b8 transparent transparent transparent;
+        }
+
+        .select2-dropdown {
+            background: #020617;
+            border: 1px solid #1f2937;
+            color: #e5e7eb;
+        }
+
+        .select2-results__option {
+            padding: 8px 12px;
+        }
+
+        .select2-results__option--highlighted {
+            background: #2563eb !important;
+            color: #ffffff !important;
+        }
+
+        .select2-results__option--selected {
+            background: #1e293b !important;
+            color: #e5e7eb !important;
+        }
+
+        /* ===============================
+           KPIs
+        =============================== */
+
+        .kpi-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .kpi-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        .kpi-value-primary {
+            color: #7dd3fc;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            border: none;
+            font-weight: 700;
+        }
+
+        .btn-outline-light {
+            border-color: #334155;
+            color: #e5e7eb;
+        }
+
+        input[type="date"] {
+            color-scheme: dark;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid p-3" style="max-width:1100px">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">📄 BI de Notas Fiscais</h5>
+        <a href="/home" class="btn btn-outline-light btn-sm">← Voltar</a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+
+                <div class="col-6 col-md-3">
+                    <input type="date" id="data_de" class="form-control">
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <input type="date" id="data_ate" class="form-control">
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-uppercase text-secondary small">Representante</label>
+                    <select id="representante" class="select2"></select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-uppercase text-secondary small">Rede de Loja</label>
+                    <select id="rede_loja" class="select2"></select>
+                </div>
+
+                <div class="col-12 col-md-2 d-grid">
+                    <button class="btn btn-primary" onclick="carregarBI()">Aplicar filtros</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="kpi-label">Notas Fiscais</div>
+                <div id="kpi_nf" class="kpi-value">—</div>
+            </div></div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="kpi-label">Pares</div>
+                <div id="kpi_qtd" class="kpi-value">—</div>
+                <div id="kpi_qtd_var" class="kpi-sub"></div>
+            </div></div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="kpi-label">Valor Faturado</div>
+                <div id="kpi_valor" class="kpi-value kpi-value-primary">—</div>
+                <div id="kpi_valor_var" class="kpi-sub"></div>
+            </div></div>
+        </div>
+    </div>
+<br>
+    <!-- RFM -->
+<div class="row g-3 mb-3">
+
+    <div class="col-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="badge bg-success mb-2">Até 30 dias</span>
+                <div id="rfm_nf_30" class="kpi-value">—</div>
+                <button class="btn btn-sm btn-outline-light mt-2"
+                        onclick="abrirRFMNotas('30')">
+                    Ver clientes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="badge bg-warning text-dark mb-2">31 a 90 dias</span>
+                <div id="rfm_nf_90" class="kpi-value">—</div>
+                <button class="btn btn-sm btn-outline-light mt-2"
+                        onclick="abrirRFMNotas('90')">
+                    Ver clientes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="badge bg-danger mb-2">90+ dias</span>
+                <div id="rfm_nf_90p" class="kpi-value">—</div>
+                <button class="btn btn-sm btn-outline-light mt-2"
+                        onclick="abrirRFMNotas('90p')">
+                    Ver clientes
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mb-3">
+
+    <div class="col-12 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="kpi-label">Top crescimento</div>
+
+                    <div class="d-flex gap-2">
+                        <select id="grupo_nf" class="form-control form-control-sm">
+                            <option value="representante">Representante</option>
+                            <option value="rede">Rede de Loja</option>
+                        </select>
+
+                        <select id="metrica_nf" class="form-control form-control-sm">
+                            <option value="pares">Pares</option>
+                            <option value="valor">Valor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <canvas id="graficoCrescimentoNF" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="kpi-label">Top queda</div>
+                <canvas id="graficoQuedaNF" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+</div>
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let filtrosCarregados = false;
+let chartCrescimentoNF = null;
+let chartQuedaNF = null;
+
+/* =========================================================
+   HELPERS
+========================================================= */
+function carregarTopCrescimentoNF() {
+
+    const params = filtrosAtuaisNotas();
+    params.append("grupo", $("#grupo_nf").val());
+    params.append("metrica", $("#metrica_nf").val());
+
+    fetch(`/bi/api/notas-fiscais/top-crescimento?${params}`)
+        .then(r => r.json())
+        .then(d => {
+
+            if (chartCrescimentoNF) chartCrescimentoNF.destroy();
+            if (!d.dados.length) return;
+
+            chartCrescimentoNF = montarGraficoHorizontal(
+                graficoCrescimentoNF,
+                d.dados,
+                "#22c55e"
+            );
+
+        });
+}
+function carregarTopQuedaNF() {
+
+    const params = filtrosAtuaisNotas();
+    params.append("grupo", $("#grupo_nf").val());
+    params.append("metrica", $("#metrica_nf").val());
+
+    fetch(`/bi/api/notas-fiscais/top-queda?${params}`)
+        .then(r => r.json())
+        .then(d => {
+
+            if (chartQuedaNF) chartQuedaNF.destroy();
+            if (!d.dados.length) return;
+
+            chartQuedaNF = montarGraficoHorizontal(
+                graficoQuedaNF,
+                d.dados,
+                "#ef4444"
+            );
+
+        });
+}
+
+function montarGraficoHorizontal(canvas, dados, cor) {
+
+    return new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: dados.map(i => i.nome),
+            datasets: [{
+                data: dados.map(i => Number(i.percentual)),
+                backgroundColor: cor,
+
+                // dados ricos para tooltip
+                meta: dados
+            }]
+        },
+        options: {
+            indexAxis: "y",
+
+            interaction: {
+                mode: "nearest",
+                axis: "x",          // ✅ CORRETO PARA HORIZONTAL
+                intersect: false
+            },
+
+            plugins: {
+                legend: { display: false },
+
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        label: function (context) {
+                            const item = context.dataset.meta[context.dataIndex];
+                            const perc = Number(item.percentual);
+
+                            return [
+                                `Atual: ${item.atual.toLocaleString("pt-BR")}`,
+                                `Anterior: ${item.anterior.toLocaleString("pt-BR")}`,
+                                `Variação: ${perc.toFixed(2)}%`
+                            ];
+                        }
+                    }
+                }
+            },
+
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: v => v + "%"
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+function preencherSelect(id, lista) {
+    const $el = $("#" + id);
+    $el.empty().append('<option></option>');
+
+    lista.forEach(v => {
+        if (v !== null && v !== undefined && String(v).trim() !== "") {
+            $el.append(new Option(v, v));
+        }
+    });
+}
+
+function filtrosAtuaisNotas() {
+    return new URLSearchParams({
+        data_de: data_de.value,
+        data_ate: data_ate.value,
+        representante: $("#representante").val() || "",
+        rede_loja: $("#rede_loja").val() || ""
+    });
+}
+
+/* =========================================================
+   RFM
+========================================================= */
+
+function carregarRFMNotas() {
+    fetch(`/bi/api/notas-fiscais/rfm/cards?${filtrosAtuaisNotas()}`)
+        .then(r => r.json())
+        .then(d => {
+            $("#rfm_nf_30").text(d.ate_30);
+            $("#rfm_nf_90").text(d.ate_90);
+            $("#rfm_nf_90p").text(d.mais_90);
+        });
+}
+
+function abrirRFMNotas(status) {
+    fetch(`/bi/api/notas-fiscais/rfm/clientes?status=${status}&${filtrosAtuaisNotas()}`)
+        .then(r => r.json())
+        .then(d => {
+
+            $("#rfm-notas-filtros").html(`
+                <span class="rfm-badge">
+                    📅 <strong>Período:</strong>
+                    ${d.filtros.data_de} → ${d.filtros.data_ate}
+                </span>
+                <span class="rfm-badge">
+                    👤 <strong>Representante:</strong>
+                    ${d.filtros.representante}
+                </span>
+                <span class="rfm-badge">
+                    🏪 <strong>Rede:</strong>
+                    ${d.filtros.rede_loja}
+                </span>
+            `);
+
+            const tbody = $("#rfm-notas-body");
+            tbody.empty();
+
+            d.clientes.forEach(c => {
+                tbody.append(`
+                    <tr>
+                        <td>${c.cliente}</td>
+                        <td>${c.status}</td>
+                        <td>${c.ultima_compra}</td>
+                        <td>${c.dias}</td>
+                        <td>${c.pedidos}</td>
+                        <td>${c.total_pares}</td>
+                    </tr>
+                `);
+            });
+
+            new bootstrap.Modal(
+                document.getElementById("modalRFMNotas")
+            ).show();
+        });
+}
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function carregarBI() {
+
+    const params = filtrosAtuaisNotas();
+
+    fetch(`/bi/api/notas_fiscais?${params}`)
+        .then(r => r.json())
+        .then(d => {
+
+            // datas
+            data_de.value = d.filtros.data_de;
+            data_ate.value = d.filtros.data_ate;
+
+            // KPIs
+            $("#kpi_nf").text(d.kpis.quantidade_nf);
+            $("#kpi_qtd").text(d.kpis.quantidade);
+            // VARIAÇÃO DE PARES (igual BI de Vendas)
+            if (d.kpis.quantidade_variacao !== null) {
+
+                const v = d.kpis.quantidade_variacao;
+
+                $("#kpi_qtd_var")
+                    .text(
+                        (v > 0 ? "▲ " : "▼ ") +
+                        Math.abs(v).toFixed(2) + "%"
+                    )
+                    .css(
+                        "color",
+                        v > 0 ? "#22c55e" : "#ef4444"
+                    );
+
+            } else {
+                $("#kpi_qtd_var")
+                    .text("—")
+                    .css("color", "#64748b");
+            }
+
+            $("#kpi_valor").text(
+                "R$ " + d.kpis.valor_faturado.toLocaleString(
+                    "pt-BR",
+                    { minimumFractionDigits: 2 }
+                )
+            );
+            // VARIAÇÃO DO VALOR FATURADO
+            if (d.kpis.valor_variacao !== null) {
+
+                const v = d.kpis.valor_variacao;
+
+                $("#kpi_valor_var")
+                    .text(
+                        (v > 0 ? "▲ " : "▼ ") +
+                        Math.abs(v).toFixed(2) + "%"
+                    )
+                    .css(
+                        "color",
+                        v > 0 ? "#22c55e" : "#ef4444"
+                    );
+
+            } else {
+                $("#kpi_valor_var")
+                    .text("—")
+                    .css("color", "#64748b");
+            }
+
+
+            // filtros (UMA VEZ)
+            if (!filtrosCarregados) {
+
+                preencherSelect("representante", d.filtros.representantes);
+                preencherSelect("rede_loja", d.filtros.redes);
+
+                $(".select2").select2({
+                    width: "100%",
+                    placeholder: "Todos",
+                    allowClear: true
+                });
+
+                filtrosCarregados = true;
+            }
+
+            // manter seleção
+            $("#representante").val(d.filtros.representante || "").trigger("change");
+            $("#rede_loja").val(d.filtros.rede_loja || "").trigger("change");
+            $("#grupo_nf, #metrica_nf").on("change", function () {
+                carregarTopCrescimentoNF();
+                carregarTopQuedaNF();
+            });
+
+
+            // carregar funções
+            carregarRFMNotas();
+            carregarTopCrescimentoNF();
+            carregarTopQuedaNF();
+
+        });
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", carregarBI);
+</script>
+
+
+
+<div class="modal fade" id="modalRFMNotas" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">RFM – Clientes (Notas Fiscais)</h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div id="rfm-notas-filtros" class="rfm-filtros mb-3"></div>
+
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Status</th>
+                            <th>Última compra</th>
+                            <th>Dias</th>
+                            <th>Pedidos</th>
+                            <th>Total de pares</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rfm-notas-body"></tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

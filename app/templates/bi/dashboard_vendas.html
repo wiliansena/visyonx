@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>BI de Vendas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+    <!-- =========================
+         DARK THEME + KPIs
+    ========================== -->
+    <style>
+        body {
+            background: #0b0f14;
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .card {
+            background: linear-gradient(180deg, #111827, #0f1621);
+            border: 1px solid #1f2a37;
+            border-radius: 16px;
+        }
+
+        .form-control,
+        .select2-container--default .select2-selection--single {
+            background: #0d131b;
+            color: #eef3f7;
+            border: 1px solid #1f2a37;
+            border-radius: 10px;
+        }
+
+        .select2-selection__rendered {
+            color: #eef3f7 !important;
+            font-size: 13px;
+        }
+
+        .select2-dropdown {
+            background: #020617;
+            border: 1px solid #1f2937;
+        }
+
+        .select2-results__option--highlighted {
+            background: #22d3ee !important;
+            color: #020617 !important;
+        }
+
+        input[type="date"] {
+            color-scheme: dark;
+        }
+
+        /* ===== KPIs ===== */
+        .kpi-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        .kpi-value-primary {
+            color: #7dd3fc;
+        }
+
+        .kpi-sub {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            border: none;
+            font-weight: 700;
+        }
+
+        .btn-outline-light {
+            border-color: #334155;
+            color: #e5e7eb;
+        }
+
+        .filter-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .rfm-filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .rfm-badge {
+            background: #020617;
+            border: 1px solid #334155;
+            color: #e5e7eb;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .rfm-badge strong {
+            color: #7dd3fc;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid p-3" style="max-width: 1100px">
+
+        <!-- HEADER -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">📊 BI de Vendas</h5>
+            <a href="/home" class="btn btn-outline-light btn-sm">
+                ← Voltar
+            </a>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-2">
+
+                    <div class="col-6 col-md-3">
+                        <input type="date" id="data_de" class="form-control">
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <input type="date" id="data_ate" class="form-control">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <div>
+                            <div class="filter-label">UF</div>
+                            <select id="uf" class="form-control select2">
+                                <option value=""></option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <div>
+                            <div class="filter-label">Representante</div>
+                            <select id="representante" class="form-control select2">
+                                <option value=""></option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div>
+                            <div class="filter-label">Rede de Loja</div>
+                            <select id="rede_loja" class="form-control select2">
+                                <option value=""></option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="col-12 col-md-2 d-grid">
+                        <button class="btn btn-primary" onclick="carregarBI()">
+                            Aplicar filtros
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row g-3 mb-3">
+
+            <!-- LINHA 1 -->
+            <div class="col-6 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Quantidade</div>
+                        <div id="kpi_qtd" class="kpi-value">—</div>
+                        <div id="kpi_qtd_var" class="kpi-sub"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Valor</div>
+                        <div id="kpi_valor" class="kpi-value kpi-value-primary">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Clientes</div>
+                        <div id="kpi_clientes" class="kpi-value">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LINHA 2 -->
+            <div class="col-6 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Preço médio</div>
+                        <div id="kpi_preco" class="kpi-value">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Ticket médio</div>
+                        <div id="kpi_ticket" class="kpi-value kpi-value-primary">—</div>
+                        <div class="kpi-sub">por cliente</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="kpi-label">Média de pares por cliente</div>
+                        <div id="kpi_media_pares" class="kpi-value">—</div>
+                        <div class="kpi-sub">no período</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RFM -->
+        <div class="row g-3 mb-3">
+
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <span class="badge bg-success mb-2">Até 30 dias</span>
+                        <div id="rfm_30" class="kpi-value">—</div>
+                        <button class="btn btn-sm btn-outline-light mt-2" onclick="abrirRFM('30')">
+                            Ver clientes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <span class="badge bg-warning text-dark mb-2">31 a 90 dias</span>
+                        <div id="rfm_90" class="kpi-value">—</div>
+                        <button class="btn btn-sm btn-outline-light mt-2" onclick="abrirRFM('90')">
+                            Ver clientes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <span class="badge bg-danger mb-2">90+ dias</span>
+                        <div id="rfm_90p" class="kpi-value">—</div>
+                        <button class="btn btn-sm btn-outline-light mt-2" onclick="abrirRFM('90p')">
+                            Ver clientes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row g-3 mb-3">
+
+            <div class="col-12 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="kpi-label">Top crescimento</div>
+                        <canvas id="graficoCrescimento" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="kpi-label">Top queda</div>
+                        <canvas id="graficoQueda" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="kpi-label">Top UF de vendas</div>
+                    <canvas id="graficoTopUF" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+        <br>
+
+        <!-- GRÁFICO -->
+        <div class="card">
+            <div class="card-body">
+                <canvas id="graficoVendas" height="140"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LIBS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script>
+        let chart = null;
+        let filtrosCarregados = false;
+        let chartCrescimento = null;
+        let chartQueda = null;
+        let chartTopUF = null;
+
+
+        function preencherSelect(id, valores) {
+            const select = document.getElementById(id);
+            select.innerHTML = '<option value=""></option>';
+            valores.forEach(v => {
+                const opt = document.createElement("option");
+                opt.value = v;
+                opt.textContent = v;
+                select.appendChild(opt);
+            });
+        }
+
+        function carregarBI() {
+
+            const params = new URLSearchParams({
+                data_de: data_de.value,
+                data_ate: data_ate.value,
+                uf: uf.value,
+                representante: representante.value,
+                rede_loja: rede_loja.value
+            });
+
+            fetch(`/bi/api/vendas?${params}`)
+                .then(r => r.json())
+                .then(d => {
+
+                    // 👉 preencher datas efetivas
+                    data_de.value = d.filtros.data_de;
+                    data_ate.value = d.filtros.data_ate;
+
+                    // KPIs (já formatados no backend)
+                    kpi_qtd.textContent = d.kpis.quantidade;
+                    if (d.kpis.quantidade_variacao !== null) {
+                        const v = d.kpis.quantidade_variacao;
+                        kpi_qtd_var.textContent =
+                            (v > 0 ? "▲ " : "▼ ") + Math.abs(v).toFixed(2) + "%";
+
+                        kpi_qtd_var.style.color =
+                            v > 0 ? "#22c55e" : "#ef4444";
+                    } else {
+                        kpi_qtd_var.textContent = "—";
+                    }
+                    kpi_valor.textContent = "R$ " + d.kpis.valor;
+                    kpi_preco.textContent = "R$ " + d.kpis.preco_medio;
+                    kpi_clientes.textContent = d.kpis.clientes;
+                    kpi_ticket.textContent = "R$ " + d.kpis.ticket_medio;
+                    kpi_media_pares.textContent = d.kpis.media_pares_cliente;
+
+                    // filtros
+                    if (!filtrosCarregados) {
+                        preencherSelect("uf", d.filtros.ufs);
+                        preencherSelect("representante", d.filtros.representantes);
+                        preencherSelect("rede_loja", d.filtros.redes);
+
+                        $(".select2").select2({
+                            width: "100%",
+                            allowClear: true,
+                            placeholder: "Selecione..."
+                        });
+
+                        filtrosCarregados = true;
+                    }
+
+                    // gráfico
+                    if (chart) chart.destroy();
+                    chart = new Chart(graficoVendas, {
+                        type: "line",
+                        data: {
+                            labels: d.tendencia.labels,
+                            datasets: [{
+                                data: d.tendencia.values,
+                                borderColor: "#22d3ee",
+                                pointBackgroundColor: "#22d3ee",
+                                tension: 0.35
+                            }]
+                        },
+                        options: {
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                    carregarRFMCard();
+                    carregarCrescimento(params);
+                    carregarQueda(params);
+                    carregarTopUF(params);
+                });
+        }
+        function filtrosAtuais() {
+            return new URLSearchParams({
+                data_de: data_de.value,
+                data_ate: data_ate.value,
+                representante: representante.value,
+                uf: uf.value,
+                rede_loja: rede_loja.value
+            });
+        }
+
+        function carregarRFMCard() {
+            fetch(`/bi/api/rfm/card?${filtrosAtuais()}`)
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById("rfm_30").textContent = d.ate_30;
+                    document.getElementById("rfm_90").textContent = d.ate_90;
+                    document.getElementById("rfm_90p").textContent = d.mais_90;
+                });
+        }
+
+        function abrirRFM(status) {
+            fetch(`/bi/api/rfm/list?status=${status}&${filtrosAtuais()}`)
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById("rfm-filtros").innerHTML = `
+                    <span class="rfm-badge">
+                        📅 <strong>Período:</strong>
+                        ${d.filtros.data_de} → ${d.filtros.data_ate}
+                    </span>
+
+                    <span class="rfm-badge">
+                        👤 <strong>Representante:</strong>
+                        ${d.filtros.representante}
+                    </span>
+
+                    <span class="rfm-badge">
+                        📍 <strong>UF:</strong>
+                        ${d.filtros.uf}
+                    </span>
+
+                    <span class="rfm-badge">
+                        🏪 <strong>Rede:</strong>
+                        ${d.filtros.rede_loja}
+                    </span>
+                `;
+
+
+                    const tbody = document.getElementById("rfm-body");
+                    tbody.innerHTML = "";
+
+                    d.clientes.forEach(c => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${c.cliente}</td>
+                                <td>${c.status}</td>
+                                <td>${c.ultima_compra}</td>
+                                <td>${c.dias}</td>
+                                <td>${c.frequencia}</td>
+                                <td>${c.total_pares}</td>
+                            </tr>
+                        `;
+                    });
+
+                    new bootstrap.Modal(
+                        document.getElementById("modalRFM")
+                    ).show();
+                });
+        }
+        function montarGraficoHorizontal(canvas, labels, valores, cor) {
+
+            return new Chart(canvas, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: cor
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        function carregarCrescimento(params) {
+
+            fetch(`/bi/api/vendas/crescimento?${params}`)
+                .then(r => r.json())
+                .then(d => {
+
+                    const box = document.getElementById("graficoCrescimento").parentElement;
+
+                    if (!d.dados || d.dados.length === 0) {
+                        box.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        Nenhuma venda no período selecionado
+                    </div>
+                `;
+                        return;
+                    }
+
+                    const limite = window.innerWidth < 768 ? 5 : 10;
+                    const dados = d.dados.slice(0, limite);
+
+                    if (chartCrescimento) chartCrescimento.destroy();
+
+                    chartCrescimento = montarGraficoHorizontal(
+                        graficoCrescimento,
+                        dados.map(i => i.nome),
+                        dados.map(i => i.valor),
+                        "#22c55e"
+                    );
+                });
+        }
+
+        function carregarQueda(params) {
+
+            fetch(`/bi/api/vendas/queda?${params}`)
+                .then(r => r.json())
+                .then(d => {
+
+                    const box = document.getElementById("graficoQueda").parentElement;
+
+                    if (!d.dados || d.dados.length === 0) {
+                        box.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        Nenhuma venda no período selecionado
+                    </div>
+                `;
+                        return;
+                    }
+
+                    const limite = window.innerWidth < 768 ? 5 : 10;
+                    const dados = d.dados.slice(0, limite);
+
+                    if (chartQueda) chartQueda.destroy();
+
+                    chartQueda = montarGraficoHorizontal(
+                        graficoQueda,
+                        dados.map(i => i.nome),
+                        dados.map(i => i.valor),
+                        "#ef4444"
+                    );
+                });
+        }
+        function carregarTopUF(params) {
+
+            fetch(`/bi/api/vendas/top_uf?${params}`)
+                .then(r => r.json())
+                .then(d => {
+
+                    const box = document.getElementById("graficoTopUF").parentElement;
+
+                    if (!d.dados || d.dados.length === 0) {
+                        box.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        Nenhuma venda no período selecionado
+                    </div>
+                `;
+                        return;
+                    }
+
+                    const limite = window.innerWidth < 768 ? 5 : 10;
+                    const dados = d.dados.slice(0, limite);
+
+                    if (chartTopUF) chartTopUF.destroy();
+
+                    chartTopUF = new Chart(graficoTopUF, {
+                        type: "bar",
+                        data: {
+                            labels: dados.map(i => i.uf),
+                            datasets: [{
+                                data: dados.map(i => i.valor),
+                                backgroundColor: "#38bdf8"
+                            }]
+                        },
+                        options: {
+                            indexAxis: "y",
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { beginAtZero: true }
+                            }
+                        }
+                    });
+                });
+        }
+
+
+        document.addEventListener("DOMContentLoaded", carregarBI);
+    </script>
+
+
+    <div class="modal fade" id="modalRFM" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">RFM – Clientes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="rfm-filtros" class="rfm-filtros">
+
+                        class="small text-muted mb-3"></div>
+
+                    <table class="table table-dark table-sm">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Status</th>
+                                <th>Última compra</th>
+                                <th>Dias</th>
+                                <th>Pedidos</th>
+                                <th>Total de pares</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rfm-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
