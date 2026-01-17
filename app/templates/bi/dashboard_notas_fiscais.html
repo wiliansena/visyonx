@@ -464,6 +464,27 @@ function carregarRFMNotas() {
 function abrirRFMNotas(status) {
     rfmStatus = status;
     rfmPage = 1;
+        // 🔹 preencher filtros aplicados (UMA VEZ)
+    const rep = $("#representante").val()
+        ? $("#representante option:selected").text()
+        : "Todos";
+
+    const rede = $("#rede_loja").val() || "Todas";
+
+    $("#rfm-notas-filtros").html(`
+        <span class="rfm-badge">
+            📅 <strong>Período:</strong>
+            ${data_de.value} → ${data_ate.value}
+        </span>
+        <span class="rfm-badge">
+            👤 <strong>Representante:</strong>
+            ${rep}
+        </span>
+        <span class="rfm-badge">
+            🏪 <strong>Rede:</strong>
+            ${rede}
+        </span>
+    `);
     carregarPaginaRFM();
 }
 
