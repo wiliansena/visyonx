@@ -2017,6 +2017,7 @@ def resolver_contato_cliente(nome_cliente):
 
 from sqlalchemy import func, or_
 
+from sqlalchemy import func, or_, and_
 
 @bp.route("/bi/api/notas-fiscais/rfm/clientes")
 @login_required
@@ -2025,21 +2026,24 @@ from sqlalchemy import func, or_
 def bi_nf_rfm_clientes():
 
     hoje = date.today()
-    status = request.args.get("status")  # "30" | "90" | "90p"
+    status = request.args.get("status")
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
 
     base, data_de, data_ate = base_nf_filtradas_bi()
 
-    rows = (
-        base.with_entities(
+    query = (
+        base
+        .with_entities(
             NotaFiscal.cliente.label("cliente"),
             func.max(NotaFiscal.data_emissao).label("ultima_compra"),
             func.count(NotaFiscal.id).label("pedidos"),
             func.coalesce(func.sum(NotaFiscal.quantidade), 0).label("total_pares")
         )
         .group_by(NotaFiscal.cliente)
-        .order_by(func.max(NotaFiscal.data_emissao).desc())
-        .all()
     )
+
+    rows = query.all()
 
     clientes = []
 
@@ -2053,7 +2057,6 @@ def bi_nf_rfm_clientes():
         else:
             status_cli = "Inativo"
 
-        # 🎯 filtro por faixa
         if status == "30" and dias > 30:
             continue
         if status == "90" and not (31 <= dias <= 90):
@@ -2063,7 +2066,6 @@ def bi_nf_rfm_clientes():
 
         clientes.append({
             "cliente": cli,
-            "contato": resolver_contato_cliente(cli),
             "status": status_cli,
             "ultima_compra": formatar_data(ultima),
             "dias": dias,
@@ -2071,18 +2073,58 @@ def bi_nf_rfm_clientes():
             "total_pares": int(total)
         })
 
+    total = len(clientes)
+    inicio = (page - 1) * per_page
+    fim = inicio + per_page
 
     return jsonify({
-        "clientes": clientes,
+        "clientes": clientes[inicio:fim],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        },
         "filtros": {
             "data_de": formatar_data(data_de),
             "data_ate": formatar_data(data_ate),
             "representante": resolver_nome_representante(
-                request.args.get("representante")),
-
+                request.args.get("representante")
+            ),
             "rede_loja": request.args.get("rede_loja") or "Todas"
         }
     })
+
+
+from sqlalchemy import func, or_
+
+@bp.route("/api/cliente/contato")
+@login_required
+@requer_licenca_ativa
+def api_cliente_contato():
+
+    nome = request.args.get("nome")
+
+    if not nome:
+        return jsonify({"contato": None})
+
+    nome_norm = nome.strip().upper()
+
+    contato = (
+        Colaborador.query
+        .filter(
+            Colaborador.ativo.is_(True),
+            or_(
+                func.upper(func.trim(Colaborador.nome)) == nome_norm,
+                func.upper(func.trim(Colaborador.nome_fantasia)) == nome_norm
+            )
+        )
+        .with_entities(Colaborador.contato)
+        .scalar()
+    )
+
+    return jsonify({"contato": contato})
+
 
 from datetime import date, timedelta
 from sqlalchemy import func, case
