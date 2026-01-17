@@ -203,7 +203,6 @@ class Venda(EmpresaQueryMixin, db.Model):
         return f"<Venda {self.pedido} - {self.estado} R$ {self.valor}>"
 
 
-##### NOTA FISCAL   #######
 class NotaFiscal(EmpresaQueryMixin, db.Model):
     __tablename__ = "nota_fiscal"
 
@@ -229,7 +228,7 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
     # Comercial
     cliente = db.Column(db.String(200), nullable=False, index=True)
     representante = db.Column(db.String(150), nullable=True, index=True)
-    pedido = db.Column(db.Text, nullable=True, index=True)
+    pedido = db.Column(db.Text, nullable=True)
 
     # Quantitativos
     quantidade = db.Column(db.Integer, nullable=True)
@@ -237,9 +236,9 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
 
     # 🚚 COD DE TRANSPORTE
     codigo_transportadora = db.Column(db.String(20), nullable=True)
+
     # REDE DE LOJA AGRUPAR
     rede_loja = db.Column(db.String(150), index=True)
-
 
     # Controle
     created_at = db.Column(
@@ -248,9 +247,35 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
     )
 
     __table_args__ = (
+        # 🔒 REGRA DE NEGÓCIO
         db.UniqueConstraint(
             "empresa_id", "numero", "serie",
             name="uq_nf_empresa_numero_serie"
+        ),
+
+        # 🚀 ÍNDICES DE PERFORMANCE (BI / LISTAGENS)
+        db.Index(
+            "idx_nf_empresa_data",
+            "empresa_id",
+            "data_emissao"
+        ),
+        db.Index(
+            "idx_nf_empresa_rep_data",
+            "empresa_id",
+            "representante",
+            "data_emissao"
+        ),
+        db.Index(
+            "idx_nf_empresa_rede_data",
+            "empresa_id",
+            "rede_loja",
+            "data_emissao"
+        ),
+        db.Index(
+            "idx_nf_empresa_cliente_data",
+            "empresa_id",
+            "cliente",
+            "data_emissao"
         ),
     )
 
@@ -258,9 +283,9 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
         return (
             f"<NF {self.numero}/{self.serie} "
             f"{self.cliente} "
-            f"Fat: {self.valor_faturado} "
-            f"Transp: {self.valor_transporte}>"
+            f"Fat: {self.valor_faturado}>"
         )
+
 
 
 class Colaborador(db.Model):
