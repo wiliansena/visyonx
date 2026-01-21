@@ -45,6 +45,7 @@ class Usuario(UserMixin, EmpresaQueryMixin,db.Model):
 
     is_master = db.Column(db.Boolean, default=False)  # 👈 CHAVE DO PAINEL MASTER
     is_admin_empresa = db.Column(db.Boolean, default=False)
+    tipo = db.Column(db.String(100), nullable=True)
 
     nome = db.Column(db.String(100), nullable=False)
     senha_hash = db.Column(db.String(200), nullable=False)
@@ -73,6 +74,7 @@ class Usuario(UserMixin, EmpresaQueryMixin,db.Model):
 
     def pode_trocar_senha(self):
         return self.tem_permissao("trocar_senha", "editar")
+
 
 
 class Permissao(EmpresaQueryMixin, db.Model ):
@@ -226,6 +228,7 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
     data_emissao = db.Column(db.Date, nullable=False, index=True)
 
     # Comercial
+    codigo_cliente = db.Column(db.String(50), nullable=True, index=True)
     cliente = db.Column(db.String(200), nullable=False, index=True)
     representante = db.Column(db.String(150), nullable=True, index=True)
     pedido = db.Column(db.Text, nullable=True)
@@ -288,10 +291,26 @@ class NotaFiscal(EmpresaQueryMixin, db.Model):
 
 
 
-class Colaborador(db.Model):
+class Colaborador(EmpresaQueryMixin, db.Model):
     __tablename__ = "colaborador"
 
     id = db.Column(db.Integer, primary_key=True)
+    # 🔐 MULTIEMPRESA
+    empresa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("empresa.id"),
+        nullable=False,
+        index=True
+    )
+
+    empresa = db.relationship(
+        "Empresa",
+        backref=db.backref(
+            "colaboradores",
+            lazy="dynamic",
+            cascade="all, delete-orphan"
+        )
+    )
     codigo = db.Column(db.String(50), unique=True, index=True, nullable=False)
     nome = db.Column(db.String(255), nullable=False)
     nome_fantasia = db.Column(db.String(255))

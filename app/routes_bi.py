@@ -918,7 +918,7 @@ def importar_vendas():
 from datetime import date, datetime
 
 from flask import current_app, jsonify, request
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from flask_mail import Message
 from app import db, mail
@@ -929,6 +929,8 @@ from sqlalchemy import func, case
 from app.models import Colaborador
 
 @bp.route("/comercial/rfm_nf_alerta_email", methods=["GET"])
+@login_required
+@requer_licenca_ativa
 @requer_permissao("comercial", "ver")
 def rfm_nf_alerta_email():
     """
@@ -966,8 +968,11 @@ def rfm_nf_alerta_email():
         NotaFiscal.query_empresa()
         .outerjoin(
             Colaborador,
-            Colaborador.codigo == NotaFiscal.representante
-        )
+            and_(
+            Colaborador.codigo == NotaFiscal.representante,
+            Colaborador.empresa_id == current_user.empresa_id
+
+        ))
         .with_entities(
             NotaFiscal.cliente.label("cliente"),
             func.max(NotaFiscal.data_emissao).label("ultima_data"),
@@ -1287,6 +1292,7 @@ def importar_notas_fiscais():
                 data_emissao = parse_date(row[1])
                 serie = clean_str(row[2])
                 cfop = clean_str(row[3])
+                codigo_cliente = clean_str(row[4])
                 cliente = clean_str(row[5])
                 representante = clean_str(row[6])
                 quantidade_raw = clean_str(row[7])
@@ -1300,6 +1306,7 @@ def importar_notas_fiscais():
                     and valor_faturado is not None
                     and data_emissao
                     and cfop and "." in cfop
+                    and codigo_cliente
                     and cliente
                 ):
                     ignoradas += 1
@@ -1321,9 +1328,10 @@ def importar_notas_fiscais():
                 nf = NotaFiscal(
                     empresa_id=current_user.empresa_id,
                     numero=numero,
+                    data_emissao=data_emissao,
                     serie=serie,
                     cfop=cfop,
-                    data_emissao=data_emissao,
+                    codigo_cliente=codigo_cliente,   
                     cliente=cliente,
                     representante=representante,
                     quantidade=quantidade,
@@ -1378,6 +1386,7 @@ def valor_valido(valor):
 @login_required
 @requer_licenca_ativa
 def importar_colaboradores():
+
     arquivo = request.files.get("arquivo")
 
     if not arquivo:
@@ -1393,6 +1402,8 @@ def importar_colaboradores():
         ignorados = 0
         duplicados = 0
 
+        empresa_id = current_user.empresa_id
+
         for _, row in df.iterrows():
             total += 1
 
@@ -1403,26 +1414,39 @@ def importar_colaboradores():
 
             codigo = normalizar_codigo(str(codigo_raw))
 
+            # -------------------------
+            # valida mínimos
+            # -------------------------
             if not valor_valido(codigo) or not valor_valido(nome):
                 ignorados += 1
                 continue
 
-            colaborador = Colaborador.query.filter_by(codigo=codigo).first()
+            nome_novo = str(nome).strip()
+            fantasia_nova = (
+                str(nome_fantasia).strip()
+                if valor_valido(nome_fantasia)
+                else None
+            )
+            contato_novo = (
+                str(contato).strip()
+                if valor_valido(contato)
+                else None
+            )
+
+            # -------------------------
+            # BUSCA MULTIEMPRESA
+            # -------------------------
+            colaborador = (
+                Colaborador.query
+                .filter_by(
+                    empresa_id=empresa_id,
+                    codigo=codigo
+                )
+                .first()
+            )
 
             if colaborador:
                 alterou = False
-
-                nome_novo = str(nome).strip()
-                fantasia_nova = (
-                    str(nome_fantasia).strip()
-                    if valor_valido(nome_fantasia)
-                    else None
-                )
-                contato_novo = (
-                    str(contato).strip()
-                    if valor_valido(contato)
-                    else None
-                )
 
                 if colaborador.nome != nome_novo:
                     colaborador.nome = nome_novo
@@ -1444,14 +1468,12 @@ def importar_colaboradores():
             else:
                 db.session.add(
                     Colaborador(
+                        empresa_id=empresa_id,  # 🔐 MULTIEMPRESA
                         codigo=codigo,
-                        nome=str(nome).strip(),
-                        nome_fantasia=(
-                            str(nome_fantasia).strip()
-                            if valor_valido(nome_fantasia)
-                            else None
-                        ),
-                        contato=str(contato).strip(),
+                        nome=nome_novo,
+                        nome_fantasia=fantasia_nova,
+                        contato=contato_novo,
+                        ativo=True
                     )
                 )
                 importados += 1
@@ -1472,6 +1494,7 @@ def importar_colaboradores():
 
     except Exception as e:
         db.session.rollback()
+        current_app.logger.exception("Erro ao importar colaboradores")
         flash(f"Erro ao importar colaboradores: {str(e)}", "danger")
 
     return redirect(request.referrer)
@@ -1519,20 +1542,35 @@ def listar_colaboradores():
     page = request.args.get("page", 1, type=int)
     per_page = 25
 
-    # Filtros
+    # ======================
+    # FILTROS
+    # ======================
     codigo = request.args.get("codigo", "").strip()
     nome = request.args.get("nome", "").strip()
     nome_fantasia = request.args.get("nome_fantasia", "").strip()
     contato = request.args.get("contato", "").strip()
     ativo = request.args.get("ativo", "").strip()
 
-    query = Colaborador.query
+    # ======================
+    # QUERY BASE (MULTIEMPRESA)
+    # ======================
+    query = (
+        Colaborador.query
+        .filter_by(empresa_id=current_user.empresa_id)
+    )
 
+    # ======================
+    # APLICA FILTROS
+    # ======================
     if codigo:
-        query = query.filter(Colaborador.codigo.ilike(f"%{codigo}%"))
+        query = query.filter(
+            Colaborador.codigo.ilike(f"%{codigo}%")
+        )
 
     if nome:
-        query = query.filter(Colaborador.nome.ilike(f"%{nome}%"))
+        query = query.filter(
+            Colaborador.nome.ilike(f"%{nome}%")
+        )
 
     if nome_fantasia:
         query = query.filter(
@@ -1549,6 +1587,9 @@ def listar_colaboradores():
     elif ativo == "0":
         query = query.filter(Colaborador.ativo.is_(False))
 
+    # ======================
+    # PAGINAÇÃO
+    # ======================
     pagination = (
         query
         .order_by(Colaborador.nome.asc())
@@ -1694,7 +1735,7 @@ from app.models import Colaborador
 def bi_api_notas_fiscais():
 
     hoje = date.today()
-    data_padrao_de = hoje - timedelta(days=90)
+    data_padrao_de = hoje - timedelta(days=60)
 
     data_de = request.args.get("data_de")
     data_ate = request.args.get("data_ate")
@@ -1831,8 +1872,10 @@ def bi_api_notas_fiscais():
         )
         .outerjoin(
             Colaborador,
-            Colaborador.codigo == NotaFiscal.representante
-        )
+            and_(
+            Colaborador.codigo == NotaFiscal.representante,
+            Colaborador.empresa_id == current_user.empresa_id
+        ))
         .filter(NotaFiscal.representante.isnot(None))
         .distinct()
         .order_by("nome")
@@ -1889,25 +1932,10 @@ def bi_api_notas_fiscais():
     })
 
 
-from datetime import date, timedelta
-from flask import request
+### BASE DE FILTOR PARA RFM LIST  ####
 
-def base_nf_filtradas_bi():
-    hoje = date.today()
-
-    data_de = request.args.get("data_de")
-    data_ate = request.args.get("data_ate")
-
-    data_de = date.fromisoformat(data_de) if data_de else hoje - timedelta(days=90)
-    data_ate = date.fromisoformat(data_ate) if data_ate else hoje
-
-    base = (
-        NotaFiscal.query_empresa()
-        .filter(
-            NotaFiscal.data_emissao >= data_de,
-            NotaFiscal.data_emissao <= data_ate
-        )
-    )
+def base_nf_rfm():
+    base = NotaFiscal.query_empresa()
 
     if request.args.get("representante"):
         base = base.filter(
@@ -1919,7 +1947,8 @@ def base_nf_filtradas_bi():
             NotaFiscal.rede_loja == request.args.get("rede_loja")
         )
 
-    return base, data_de, data_ate
+    return base
+
 
 @bp.route("/bi/api/notas-fiscais/rfm/cards")
 @login_required
@@ -1928,7 +1957,7 @@ def base_nf_filtradas_bi():
 def bi_nf_rfm_cards():
 
     hoje = date.today()
-    base, _, _ = base_nf_filtradas_bi()
+    base = base_nf_rfm()
 
     rows = (
         base.with_entities(
@@ -1959,30 +1988,48 @@ def bi_nf_rfm_cards():
 
 
 ### HELPER DO NOME DO REPRESENTANTE JUNTANDO MODEL COLABORADOR COM NF
+from sqlalchemy import case
+
 def resolver_nome_representante(codigo):
-    if not codigo:
-        return "Todos"
+    """
+    Resolve o nome do representante (Colaborador) da EMPRESA ATUAL
+    a partir do código vindo da Nota Fiscal ou Venda.
+    """
 
-    col = (
-        Colaborador.query
-        .filter_by(codigo=codigo)
-        .with_entities(
-            case(
-                (
-                    Colaborador.nome_fantasia.isnot(None),
-                    Colaborador.nome_fantasia
-                ),
-                (
-                    Colaborador.nome.isnot(None),
-                    Colaborador.nome
-                ),
-                else_=codigo
+    try:
+        if not codigo:
+            return "Todos"
+
+        empresa_id = current_user.empresa_id
+
+        nome = (
+            Colaborador.query
+            .filter_by(
+                empresa_id=empresa_id,   # 🔐 MULTIEMPRESA
+                codigo=codigo
             )
+            .with_entities(
+                case(
+                    (
+                        Colaborador.nome_fantasia.isnot(None),
+                        Colaborador.nome_fantasia
+                    ),
+                    (
+                        Colaborador.nome.isnot(None),
+                        Colaborador.nome
+                    ),
+                    else_=codigo
+                )
+            )
+            .scalar()
         )
-        .scalar()
-    )
 
-    return col or codigo
+        return nome or codigo
+
+    except Exception as e:
+        current_app.logger.exception("Erro em resolver_nome_representante")
+        return codigo
+
 
 
 from sqlalchemy import func, or_
@@ -1990,20 +2037,27 @@ from sqlalchemy import func, or_
 from sqlalchemy import func, or_
 
 def resolver_contato_cliente(nome_cliente):
+    """
+    Retorna o contato do cliente (Colaborador) da EMPRESA ATUAL
+    comparando por nome ou nome_fantasia.
+    """
+
     try:
         if not nome_cliente:
             return None
 
-        nome_cliente_norm = nome_cliente.strip().upper()
+        nome_norm = nome_cliente.strip().upper()
+        empresa_id = current_user.empresa_id
 
         contato = (
             Colaborador.query
             .filter(
+                Colaborador.empresa_id == empresa_id,  # 🔐 MULTIEMPRESA
+                Colaborador.ativo.is_(True),
                 or_(
-                    func.upper(func.trim(Colaborador.nome)) == nome_cliente_norm,
-                    func.upper(func.trim(Colaborador.nome_fantasia)) == nome_cliente_norm
-                ),
-                Colaborador.ativo.is_(True)
+                    func.upper(func.trim(Colaborador.nome)) == nome_norm,
+                    func.upper(func.trim(Colaborador.nome_fantasia)) == nome_norm
+                )
             )
             .with_entities(Colaborador.contato)
             .scalar()
@@ -2012,7 +2066,7 @@ def resolver_contato_cliente(nome_cliente):
         return contato
 
     except Exception as e:
-        print("ERRO resolver_contato_cliente:", e)
+        current_app.logger.exception("Erro em resolver_contato_cliente")
         return None
 
 from sqlalchemy import func, or_
@@ -2030,7 +2084,10 @@ def bi_nf_rfm_clientes():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
 
-    base, data_de, data_ate = base_nf_filtradas_bi()
+    base = base_nf_rfm()
+    # datas apenas para exibição no modal
+    data_de = request.args.get("data_de")
+    data_ate = request.args.get("data_ate")
 
     query = (
         base
@@ -2086,13 +2143,14 @@ def bi_nf_rfm_clientes():
             "total_pages": (total + per_page - 1) // per_page
         },
         "filtros": {
-            "data_de": formatar_data(data_de),
-            "data_ate": formatar_data(data_ate),
+            "data_de": data_de,
+            "data_ate": data_ate,
             "representante": resolver_nome_representante(
                 request.args.get("representante")
             ),
             "rede_loja": request.args.get("rede_loja") or "Todas"
         }
+
     })
 
 
@@ -2109,10 +2167,12 @@ def api_cliente_contato():
         return jsonify({"contato": None})
 
     nome_norm = nome.strip().upper()
+    empresa_id = current_user.empresa_id
 
     contato = (
         Colaborador.query
         .filter(
+            Colaborador.empresa_id == empresa_id,   # 🔐 MULTIEMPRESA
             Colaborador.ativo.is_(True),
             or_(
                 func.upper(func.trim(Colaborador.nome)) == nome_norm,
@@ -2176,8 +2236,10 @@ def bi_nf_top_crescimento():
         NotaFiscal.query_empresa()
         .outerjoin(
             Colaborador,
-            Colaborador.codigo == NotaFiscal.representante
-        )
+            and_(
+            Colaborador.codigo == NotaFiscal.representante,
+            Colaborador.empresa_id == current_user.empresa_id
+        ))
         .filter(NotaFiscal.data_emissao.between(data_de, data_ate))
         .with_entities(
             campo_grupo.label("codigo"),
@@ -2196,8 +2258,10 @@ def bi_nf_top_crescimento():
         NotaFiscal.query_empresa()
         .outerjoin(
             Colaborador,
-            Colaborador.codigo == NotaFiscal.representante
-        )
+            and_(
+            Colaborador.codigo == NotaFiscal.representante,
+            Colaborador.empresa_id == current_user.empresa_id
+        ))
         .filter(NotaFiscal.data_emissao.between(data_de_ant, data_ate_ant))
         .with_entities(
             campo_grupo.label("codigo"),
@@ -2304,8 +2368,10 @@ def bi_nf_top_queda():
         NotaFiscal.query_empresa()
         .outerjoin(
             Colaborador,
-            Colaborador.codigo == NotaFiscal.representante
-        )
+            and_(
+            Colaborador.codigo == NotaFiscal.representante,
+            Colaborador.empresa_id == current_user.empresa_id
+        ))
         .filter(NotaFiscal.data_emissao.between(data_de, data_ate))
         .with_entities(
             campo_codigo.label("codigo"),
